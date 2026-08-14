@@ -1,0 +1,11 @@
+roi_id,camera,model_name,class_id,class_name,detect_x_min,detect_y_min,detect_x_max,detect_y_max,compare_x_min,compare_y_min,compare_x_max,compare_y_max,confidence,check_mode,min_count,max_count,keypoint_idx_1,keypoint_idx_2,expected_angle,angle_tolerance
+roi_001,CAM1,ClampV5,0,black_clamp,1129,1111,1705,1752,1370,1166,1596,1639,0.25,compare,,,,,,
+roi_002,CAM1,ClampV5,0,black_clamp,1634,1082,2026,1524,1755,1146,1924,1501,0.25,compare,,,,,,
+roi_003,CAM1,CotFineTune,1,cot,685,1244,1114,1710,885,1492,923,1532,0.5,classify,,,,,,
+roi_004,CAM1,CotFineTune,1,cot,737,1261,1180,1696,1007,1389,1038,1425,0.5,classify,,,,,,
+roi_005,CAM1,CotFineTune,1,tam,867,1694,1204,2012,1021,1748,1051,1784,0.5,classify,,,,,,
+roi_006,CAM1,CotFineTune,1,tam,897,1651,1252,2007,1079,1735,1112,1760,0.5,classify,,,,,,
+roi_007,CAM1,CotFineTune,1,tam,1075,1232,1404,1583,1207,1381,1237,1413,0.5,classify,,,,,,
+roi_008,CAM1,CotFineTune,1,tam,1074,1259,1525,1648,1265,1417,1287,1445,0.5,classify,,,,,,
+roi_009,CAM1,CotFineTune,1,tam,1078,1479,1394,1772,1216,1601,1264,1658,0.5,classify,,,,,,
+roi_010,CAM1,CotFineTune,1,tam,1049,1467,1414,1789,1221,1548,1254,1593,0.5,classify,,,,,,

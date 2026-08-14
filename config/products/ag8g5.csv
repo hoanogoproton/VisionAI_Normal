@@ -1,0 +1,3 @@
+roi_id,camera,model_name,class_id,class_name,detect_x_min,detect_y_min,detect_x_max,detect_y_max,compare_x_min,compare_y_min,compare_x_max,compare_y_max,confidence,check_mode,min_count,max_count,keypoint_idx_1,keypoint_idx_2,expected_angle,angle_tolerance
+roi_001,CAM1,ClampV3,0,black_clamp,561,958,1242,1731,586,980,1217,1701,0.4,count,2,2,,,,
+roi_002,CAM1,ClampV3,0,black_clamp,1129,670,2004,1636,1137,685,2000,1603,0.4,count,3,3,,,,

@@ -1,0 +1,4 @@
+roi_id,camera,model_name,class_id,class_name,detect_x_min,detect_y_min,detect_x_max,detect_y_max,compare_x_min,compare_y_min,compare_x_max,compare_y_max,confidence,check_mode,min_count,max_count,keypoint_idx_1,keypoint_idx_2,expected_angle,angle_tolerance
+roi_001,CAM1,wires,0,wires,1763,710,2478,1381,2095,801,2270,969,0.34,compare,,,,,,
+roi_002,CAM1,wires,0,wires,1782,721,2456,1363,1967,969,2132,1100,0.34,compare,,,,,,
+roi_003,CAM1,wires,0,wires,215,674,681,1184,400,758,546,965,0.34,count,2,2,,,,

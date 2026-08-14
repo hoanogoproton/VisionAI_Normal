@@ -1,0 +1,101 @@
+# ============================================================================
+# VisionAI Sumi Detect - Configuration File
+# ============================================================================
+# 
+# Huong dan deployment cho nhieu may:
+# ----------------------------------------------------------------------------
+# 1. Copy file nay thanh config_Line1.yaml, config_Line2.yaml, ...
+# 2. Chinh sua config cho tung line san xuat
+# 3. Khi chay: python main.py (se tu dong load config.yaml)
+# 4. Hoac: copy config_LineX.yaml -> config.yaml truoc khi chay
+#
+# Backup config:
+# ----------------------------------------------------------------------------
+# - Luu config theo ngay: config_YYYYMMDD.yaml
+# - Version control: git add config.yaml && git commit -m "Update config"
+#
+# ============================================================================
+
+# --- Product Configuration ---
+# Ma san pham dang kiem tra
+# 2 CHE DO:
+#   - manual: Doc product code tu config (co dinh)
+#   - auto: Doc product code tu cong COM (dong, tu PLC/scanner)
+#   - log: Doc barcode moi nhat tu file log
+product:
+  mode: "manual"                           # "manual", "auto" hoac "log"
+  
+  # --- CHE DO MANUAL ---
+  code: "AOL"                          # Ma hang (chi dung khi mode=manual)
+  
+  # --- CHE DO AUTO ---
+  com_input_port: "COM7"                   # Cong COM nhan product code
+  com_input_baudrate: 9600                 # Toc do baud
+  com_input_timeout: 1.0                   # Timeout (giay)
+  com_input_poll_interval: 0.5             # Thoi gian poll (giay)
+  default_code: "QSLZ7A"                  # Code mac dinh (khi COM chua co du lieu)
+
+  # --- CHE DO LOG ---
+  # Example ngay 2026-04-11:
+  #   root_dir = D:/anh
+  #   log path = D:/anh/20260411/WH_AVIS_System.log
+  log_root_dir: "D:/anh"                   # Thu muc goc thay doi theo tung may
+  log_filename: "WH_AVIS_System.log"       # Ten file log
+  log_date_folder_format: "%Y%m%d"         # Thu muc ngay trong root_dir
+  log_poll_interval: 0.5                    # Chu ky kiem tra them dong moi
+  
+  # --- CHUNG ---
+  csv_path: "config/products/{code}.csv"   # Duong dan CSV ROI config
+                                           # {code} se duoc thay the bang product code
+
+# --- Path Configuration ---
+# Cac thu muc luu ket qua
+paths:
+  output_dir: "output/results"   # Thu muc luu anh ket qua
+  log_dir: "output/logs"         # Thu muc luu log file
+
+# --- Camera Configuration ---
+# Cau hinh camera va ImageWatcher
+camera:
+  config_csv: "config/camera_config.csv"   # File CSV cau hinh camera
+  create_folders: true                     # Tu dong tao folder neu chua co
+  poll_interval: 0.5                       # Thoi gian poll anh moi (giay)
+
+# --- COM Output Configuration ---
+# Gui tin hieu OK/NG qua cong COM den PLC/Arduino
+com_output:
+  enabled: false          # Bat/tat chuc nang (false de debug khong can COM)
+  port: "COM5"           # Cong COM (VD: COM3, COM5, COM10)
+  baudrate: 9600         # Toc do baud (9600, 19200, 115200, ...)
+  retry_count: 3         # So lan thu lai neu that bai
+
+# --- GUI Configuration ---
+# Cau hinh cua so hien thi ket qua
+gui:
+  enabled: true                          # Bat/tat GUI
+  window_name: "VisionAI - SHWS"   # Ten cua so
+  max_history: 10                        # So batch luu lich su hien thi
+
+# --- Result Save Configuration ---
+result:
+  save_result: true                      # true: luu anh ket qua batch, false: khong luu
+  save_csv_history: true                # true: ghi lich su ket qua theo batch ra CSV
+  csv_history_path: "output/results/detect_history.csv"  # Duong dan CSV lich su
+
+# ============================================================================
+# Notes for Multi-Machine Deployment
+# ============================================================================
+#
+# Line A (CAM1, CAM2):
+#   - product.code: "ABC123"
+#   - com_output.port: "COM3"
+#
+# Line B (CAM1, CAM2, CAM3):
+#   - product.code: "ABC456"
+#   - com_output.port: "COM5"
+#
+# Test Bench (khong co COM):
+#   - com_output.enabled: false
+#   - gui.enabled: true
+#
+# ============================================================================

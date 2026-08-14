@@ -1,0 +1,5 @@
+roi_id,camera,model_name,class_id,class_name,detect_x_min,detect_y_min,detect_x_max,detect_y_max,compare_x_min,compare_y_min,compare_x_max,compare_y_max,confidence,check_mode,min_count,max_count,keypoint_idx_1,keypoint_idx_2,expected_angle,angle_tolerance
+roi_001,CAM1,AOL,1,San pham OK,14,12,1594,1191,368,435,1217,760,0.21,count,1,1,,,,
+roi_002,CAM1,AOL,0,Loi khong dung dich,16,16,1592,1185,412,455,695,734,0.21,count,0,0,,,,
+roi_003,CAM1,AOL,0,Loi khong dung dich,14,14,1592,1189,568,456,983,737,0.21,count,0,0,,,,
+roi_004,CAM1,AOL,0,Loi khong dung dich,23,17,1589,1185,860,456,1283,737,0.21,count,0,0,,,,

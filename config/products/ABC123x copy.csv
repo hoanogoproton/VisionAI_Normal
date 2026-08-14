@@ -1,0 +1,5 @@
+roi_id,camera,model_name,class_id,class_name,detect_x_min,detect_y_min,detect_x_max,detect_y_max,compare_x_min,compare_y_min,compare_x_max,compare_y_max,confidence,keypoint_idx_1,keypoint_idx_2,expected_angle,angle_tolerance
+roi_001,CAM1,MarkF,0,mark,1800,1686,2207,2048,1815,1694,2186,2039,0.29,,,,
+roi_003,CAM1,MarkF,0,mark,2781,1492,3187,1892,2805,1513,3164,1864,0.36,0,3,0,20
+roi_004,CAM1,MarkF,0,mark,1800,1686,2207,2048,1815,1694,2186,2039,0.29,0,3,180,20
+roi_002,CAM2,MarkF,0,mark,2781,1492,3187,1892,2805,1513,3164,1864,0.36,,,,

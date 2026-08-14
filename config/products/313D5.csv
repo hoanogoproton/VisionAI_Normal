@@ -1,0 +1,8 @@
+roi_id,camera,model_name,class_id,class_name,detect_x_min,detect_y_min,detect_x_max,detect_y_max,compare_x_min,compare_y_min,compare_x_max,compare_y_max,confidence,check_mode,min_count,max_count,keypoint_idx_1,keypoint_idx_2,expected_angle,angle_tolerance
+roi_001,CAM1,best2,0,12A60,295,309,841,794,309,320,827,790,0.33,count,1,1,,,,
+roi_005,CAM1,best2,0,12A60,1851,1475,2463,2004,1865,1490,2445,1986,0.33,count,1,1,,,,
+roi_006,CAM1,best2,0,12A60,2478,834,2897,1260,2492,852,2886,1246,0.33,count,1,1,,,,
+roi_007,CAM2,best2,0,12A60,2190,14,2700,502,2201,29,2685,488,0.33,count,2,2,,,,
+roi_008,CAM2,best2,0,12A60,2365,790,2868,1220,2376,798,2860,1209,0.33,count,1,1,,,,
+roi_009,CAM3,best2,0,12A60,561,7,1370,477,572,21,1363,462,0.33,count,2,2,,,,
+roi_011,CAM3,best2,0,12A60,1989,7,2944,940,1997,21,2933,925,0.33,count,1,1,,,,

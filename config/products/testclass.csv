@@ -1,0 +1,3 @@
+roi_id,camera,model_name,class_id,class_name,detect_x_min,detect_y_min,detect_x_max,detect_y_max,compare_x_min,compare_y_min,compare_x_max,compare_y_max,confidence,check_mode,min_count,max_count,keypoint_idx_1,keypoint_idx_2,expected_angle,angle_tolerance
+roi_002,CAM1,CotClass,1,cot,851,1472,941,1560,886,1499,906,1519,0.7,classify,,,,,,
+roi_003,CAM1,CotClass,1,cot,957,1343,1084,1471,1015,1387,1037,1408,0.7,classify,,,,,,
