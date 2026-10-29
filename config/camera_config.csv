@@ -1,5 +1,5 @@
 camera_name,input_folder,temp_folder,enabled
-CAM1,D:/ImageTest/CAM1,images/process_temp/CAM1,true
-CAM2,D:/ImageTest/CAM2,images/process_temp/CAM2,true
-CAM3,D:/ImageTest/CAM3,images/process_temp/CAM3,true
-CAM4,D:/ImageTest/CAM4,images/process_temp/CAM4,true
+CAM1,D:/ImageTest/CAM1,images/process_temp/CAM1,TRUE
+CAM2,D:/ImageTest/CAM2,images/process_temp/CAM2,TRUE
+CAM3,D:/ImageTest/CAM3,images/process_temp/CAM3,TRUE
+CAM4,D:/ImageTest/CAM4,images/process_temp/CAM4,TRUE

@@ -5,101 +5,97 @@ Khong phu thuoc: Chi import pathlib, os, shutil
 """
 
 import os
-import time
 import shutil
 from pathlib import Path
-from typing import Dict, Optional, List
+from typing import Dict, List
 from datetime import datetime
 
 
 class ImageWatcher:
     """
-    Giám sát folder cho ảnh mới
-    - Chỉ xử lý ảnh chưa được xử lý
-    - Instant copy sang temp folder để bảo vệ ảnh
+    Giám sát folder cho ảnh mới.
+
+    - Chỉ xử lý mỗi phiên bản file một lần.
+    - Instant copy sang temp folder để bảo vệ ảnh.
+    - Khi đổi mã hàng, các file đã có trong folder được đánh dấu là ảnh cũ.
     """
-    
+
+    IMAGE_PATTERNS = ("*.jpg", "*.JPG", "*.png", "*.PNG")
+
     def __init__(self, watch_folder: str, temp_folder: str = "images/process_temp",
                  poll_interval: float = 0.5, auto_cleanup: bool = True):
-        """
-        Khoi tao watcher
-        
-        Args:
-            watch_folder (str): Folder theo dõi (VD: "images/temp/CAM1")
-            temp_folder (str): Folder lưu copy an toàn
-            poll_interval (float): Thời gian kiểm tra (giây)
-            auto_cleanup (bool): Tự động xóa file temp sau khi xử lý
-        """
         self.watch_folder = Path(watch_folder)
         self.temp_folder = Path(temp_folder)
         self.poll_interval = poll_interval
         self.auto_cleanup = auto_cleanup
-        
-        # Nhớ file đã xử lý (tránh xử lý lại)
-        self.processed_files = set()
-        
-        # Tạo folder nếu chưa có
+
+        # filename -> (mtime_ns, ctime_ns, size). A changed file with the same
+        # filename is a new image and must be processable.
+        self.processed_files: Dict[str, tuple] = {}
+
         self.watch_folder.mkdir(parents=True, exist_ok=True)
         self.temp_folder.mkdir(parents=True, exist_ok=True)
-        
+
         # Scan folder hiện tại - đánh dấu để bỏ qua
         self._mark_existing_files()
-        
+
         print(f"[WATCHER INIT]")
         print(f"  watch_folder: {self.watch_folder.absolute()}")
         print(f"  temp_folder: {self.temp_folder.absolute()}")
         print(f"  poll_interval: {poll_interval}s")
-    
+
+    def _iter_image_files(self) -> List[Path]:
+        """Return image files in a deterministic order."""
+        files = []
+        for pattern in self.IMAGE_PATTERNS:
+            files.extend(self.watch_folder.glob(pattern))
+        return sorted(files, key=lambda path: path.name.lower())
+
+    @staticmethod
+    def _get_file_identity(img_path: Path) -> tuple:
+        """Identity changes when a camera overwrites a filename with a new image."""
+        stat = img_path.stat()
+        return stat.st_mtime_ns, stat.st_ctime_ns, stat.st_size
+
     def _mark_existing_files(self) -> None:
-        """Đánh dấu file hiện có để bỏ qua lần đầu chạy"""
-        existing = list(self.watch_folder.glob('*.jpg')) + \
-                  list(self.watch_folder.glob('*.JPG')) + \
-                  list(self.watch_folder.glob('*.png')) + \
-                  list(self.watch_folder.glob('*.PNG'))
-        
-        for f in existing:
-            self.processed_files.add(f.name)
-        
+        """Mark files currently present as already handled/ignored."""
+        existing = self._iter_image_files()
+
+        for file_path in existing:
+            try:
+                self.processed_files[file_path.name] = self._get_file_identity(file_path)
+            except OSError as e:
+                print(f"[WATCHER ERROR] Cannot stat existing file {file_path.name}: {e}")
+
         if existing:
             print(f"[WATCHER] Ignored {len(existing)} existing files")
-    
+
     def get_new_images(self) -> List[Dict[str, str]]:
         """
-        Lấy danh sách ảnh mới (chưa được xử lý)
-        
-        Returns:
-            List[Dict]: Danh sách ảnh mới:
-                [
-                    {
-                        'filename': str,
-                        'original_path': str (đường dẫn gốc),
-                        'temp_path': str (đường dẫn sau copy)
-                    },
-                    ...
-                ]
+        Lấy danh sách ảnh mới (chưa được xử lý).
+
+        Chỉ trả về file xuất hiện hoặc bị ghi đè sau lần reset watcher gần nhất.
         """
         new_images = []
-        
+
         try:
-            # Tìm tất cả ảnh trong watch folder
-            image_files = list(self.watch_folder.glob('*.jpg')) + \
-                         list(self.watch_folder.glob('*.JPG')) + \
-                         list(self.watch_folder.glob('*.png')) + \
-                         list(self.watch_folder.glob('*.PNG'))
-            
-            for img_path in image_files:
-                # Bỏ qua nếu đã xử lý
-                if img_path.name in self.processed_files:
+            for img_path in self._iter_image_files():
+                try:
+                    file_identity = self._get_file_identity(img_path)
+                except OSError as e:
+                    print(f"[WATCHER ERROR] Cannot stat {img_path.name}: {e}")
                     continue
-                
-                # Đánh dấu đã xử lý
-                self.processed_files.add(img_path.name)
-                
-                # Copy sang temp folder
+
+                previous_identity = self.processed_files.get(img_path.name)
+                if previous_identity == file_identity:
+                    continue
+
+                self.processed_files[img_path.name] = file_identity
+
                 try:
                     temp_path = self.temp_folder / img_path.name
                     shutil.copy2(img_path, temp_path)
-                    
+
                     new_images.append({
                         'filename': img_path.name,
                         'original_path': str(img_path),
@@ -107,32 +103,34 @@ class ImageWatcher:
                     })
                 except Exception as e:
                     print(f"[WATCHER ERROR] Copy failed: {img_path.name} - {e}")
-                    # Bỏ đánh dấu để retry lần sau
-                    self.processed_files.remove(img_path.name)
-        
+                    # Retry later unless a newer version has already replaced it.
+                    if self.processed_files.get(img_path.name) == file_identity:
+                        self.processed_files.pop(img_path.name, None)
+
         except Exception as e:
             print(f"[WATCHER ERROR] Scan folder failed: {e}")
-        
+
         return new_images
-    
+
     def cleanup_temp_file(self, temp_path: str) -> None:
-        """
-        Xóa file temp sau khi xử lý xong
-        
-        Args:
-            temp_path (str): Đường dẫn file temp
-        """
+        """Xóa file temp sau khi xử lý xong."""
         try:
             if self.auto_cleanup and os.path.exists(temp_path):
                 os.remove(temp_path)
         except Exception as e:
             print(f"[WATCHER] Cleanup error: {e}")
-    
+
     def reset(self) -> None:
-        """Reset tracking - gọi lại từ đầu"""
+        """
+        Start a new image batch.
+
+        Every image present in the input folder at this instant is marked as
+        old. Only files that appear or are overwritten after this reset are
+        returned by ``get_new_images``.
+        """
         self.processed_files.clear()
         self._mark_existing_files()
-        print(f"[WATCHER] Reset - will re-scan all files")
+        print("[WATCHER] Reset - ignored images currently in folder")
 
 
 # ============================================================================
@@ -154,8 +152,7 @@ def main():
     
     # Test 2: Create dummy images
     print("[2] Create test images:")
-    import time
-    
+        
     watch_path = Path("test_watch")
     watch_path.mkdir(exist_ok=True)
     

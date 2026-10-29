@@ -174,6 +174,46 @@ def log_signal_plan(roi_rules: list, csv_path: str) -> None:
         )
 
 
+
+def cleanup_partial_batch_temp_files(watchers: dict, temp_paths: dict) -> None:
+    """Remove temporary copies belonging to a batch that is being discarded."""
+    for cam, temp_path in temp_paths.items():
+        watcher = watchers.get(cam)
+        if watcher is None:
+            continue
+
+        try:
+            watcher.cleanup_temp_file(temp_path)
+        except Exception as e:
+            log_message(f"[CLEANUP] Error cleaning discarded temp file for {cam}: {e}")
+
+
+def reset_image_boundary_for_new_scan(
+    watchers: dict,
+    used_cameras: list,
+    temp_paths: dict,
+) -> tuple:
+    """
+    Start a fresh image batch after an accepted product scan.
+
+    Images already present in each camera folder are treated as belonging to
+    the previous batch. Only files that appear or are overwritten after this
+    reset can be collected for the new product.
+    """
+    cleanup_partial_batch_temp_files(watchers, temp_paths)
+
+    for cam in used_cameras:
+        watcher = watchers.get(cam)
+        if watcher is None:
+            log_message(f"[RESET] Camera {cam} has no ImageWatcher; skipped image boundary")
+            continue
+
+        watcher.reset()
+        log_message(f"[RESET] Camera {cam}: ignored images currently in folder")
+
+    return {}, {}
+
+
 def poll_cameras_once(watchers: dict, used_cameras: list, images: dict, temp_paths: dict) -> tuple:
     """
     Kiem tra 1 luot tat ca camera (NON-BLOCKING).
@@ -737,9 +777,13 @@ def main():
                         watchers[cam] = ImageWatcher(input_folder, temp_folder, poll_interval=CAMERA_POLL_INTERVAL)
                         log_message(f"[INIT] ImageWatcher for {cam}: {input_folder}")
                     
-                    # Reset images (cho batch moi)
-                    images = {}
-                    temp_paths = {}
+                    # A valid new scan starts a new image generation.  Discard any
+                    # partial batch and ignore images from the preceding product.
+                    images, temp_paths = reset_image_boundary_for_new_scan(
+                        watchers=watchers,
+                        used_cameras=used_cameras,
+                        temp_paths=temp_paths,
+                    )
 
                     # Reset cache re-detect khi doi product
                     last_images_by_cam = {}
