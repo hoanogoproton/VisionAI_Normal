@@ -23,10 +23,10 @@
 #   - auto: Doc product code tu cong COM (dong, tu PLC/scanner)
 #   - log: Doc barcode moi nhat tu file log
 product:
-  mode: "log"                           # "manual", "auto" hoac "log"
+  mode: "manual"                           # "manual", "auto" hoac "log"
   
   # --- CHE DO MANUAL ---
-  code: "QSLZ7A"                          # Ma hang (chi dung khi mode=manual)
+  code: "QSLZ7"                          # Ma hang (chi dung khi mode=manual)
   
   # --- CHE DO AUTO ---
   com_input_port: "COM7"                   # Cong COM nhan product code
@@ -65,7 +65,7 @@ camera:
 # Gui tin hieu OK/NG qua cong COM den PLC/Arduino
 com_output:
   enabled: true          # Bat/tat chuc nang (false de debug khong can COM)
-  port: "COM9"           # Cong COM (VD: COM3, COM5, COM10)
+  port: "COM13"           # Cong COM (VD: COM3, COM5, COM10)
   baudrate: 9600         # Toc do baud (9600, 19200, 115200, ...)
   retry_count: 3         # So lan thu lai neu that bai
 
