@@ -46,6 +46,16 @@ def get_default_config() -> Dict[str, Any]:
             'create_folders': True,
             'poll_interval': 0.5
         },
+        'acquisition': {
+            'poll_interval': 0.02,
+            'queue_max_images': 32,
+            'queue_max_mb': 128,
+            'max_image_mb': 32,
+            'retry_delays_ms': [5, 10, 20, 40],
+            'retry_timeout_ms': 250,
+            'require_complete_markers': True,
+            'max_decoded_pixels': 40000000,
+        },
         'com_output': {
             'enabled': True,
             'port': 'COM5',

@@ -23,7 +23,7 @@
 #   - auto: Doc product code tu cong COM (dong, tu PLC/scanner)
 #   - log: Doc barcode moi nhat tu file log
 product:
-  mode: "manual"                           # "manual", "auto" hoac "log"
+  mode: "log"                           # "manual", "auto" hoac "log"
   
   # --- CHE DO MANUAL ---
   code: "QSLZ7"                          # Ma hang (chi dung khi mode=manual)

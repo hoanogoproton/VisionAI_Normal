@@ -20,6 +20,7 @@ import time
 import csv
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
+from modules.ai_worker import decode_packets, detect_images
 import cv2
 
 # ============================================================================
@@ -49,7 +50,21 @@ COM_RETRY = cfg['com_output']['retry_count']
 # Camera Config
 CAMERA_CONFIG_CSV = cfg['camera']['config_csv']
 CAMERA_CREATE_FOLDERS = cfg['camera']['create_folders']
-CAMERA_POLL_INTERVAL = cfg['camera']['poll_interval']
+ACQUISITION_CFG = cfg.get('acquisition', {})
+# Periodic capture statistics: default 60 seconds; 0 disables only this log.
+CAPTURE_STATS_INTERVAL = float(ACQUISITION_CFG.get('stats_interval_seconds', 60.0))
+# Separate from legacy camera.poll_interval=0.5. Tune against measured file lifetime.
+CAMERA_POLL_INTERVAL = ACQUISITION_CFG.get('poll_interval', 0.02)
+ACQUISITION_OPTIONS = {
+    'queue_max_images': ACQUISITION_CFG.get('queue_max_images', 32),
+    'queue_max_bytes': int(ACQUISITION_CFG.get('queue_max_mb', 128) * 1024 * 1024),
+    'max_image_bytes': int(ACQUISITION_CFG.get('max_image_mb', 32) * 1024 * 1024),
+    'retry_delays': ACQUISITION_CFG.get('retry_delays_ms', [5, 10, 20, 40]),
+    'retry_timeout': ACQUISITION_CFG.get('retry_timeout_ms', 250) / 1000.0,
+}
+ACQUISITION_OPTIONS['retry_delays'] = [
+    delay / 1000.0 for delay in ACQUISITION_OPTIONS['retry_delays']
+]
 
 # GUI Config
 GUI_ENABLED = cfg['gui']['enabled']
@@ -214,53 +229,20 @@ def reset_image_boundary_for_new_scan(
     return {}, {}
 
 
-def poll_cameras_once(watchers: dict, used_cameras: list, images: dict, temp_paths: dict) -> tuple:
+def poll_cameras_once(watchers: dict, used_cameras: list,
+                      images: dict, temp_paths: dict) -> tuple:
+    """Compatibility API: dequeue RAM packets only; no scan/read/decode/wait.
+
+    Values in images are ImagePacket, not OpenCV arrays. main() uses its
+    asynchronous decode job before detection. temp_paths remains empty.
     """
-    Kiem tra 1 luot tat ca camera (NON-BLOCKING).
-    - Khong cho, chi kiem tra co anh moi khong
-    - Neu co -> doc anh, them vao dict
-    - Neu khong -> bo qua, tra ve ngay
-
-    Args:
-        watchers: {"CAM1": ImageWatcher, ...}
-        used_cameras: Danh sach camera can cho
-        images: Dict anh da thu thap duoc (se duoc cap nhat)
-        temp_paths: Dict luu duong dan temp file (de cleanup sau)
-
-    Returns:
-        tuple: (images, temp_paths) da duoc cap nhat
-    """
-    cameras_to_check = [cam for cam in used_cameras if cam not in images]
-    if not cameras_to_check:
-        return images, temp_paths
-
-    max_workers = min(len(cameras_to_check), 8)
-
-    def poll_single_camera(cam: str):
-        new_images = watchers[cam].get_new_images()
-        if not new_images:
-            return None
-
-        image_path = new_images[0]['temp_path']
-        image = cv2.imread(image_path)
-        if image is None:
-            return None
-
-        return cam, image, image_path
-
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = [executor.submit(poll_single_camera, cam) for cam in cameras_to_check]
-        for future in futures:
-            result = future.result()
-            if not result:
-                continue
-            cam, image, image_path = result
-            images[cam] = image
-            temp_paths[cam] = image_path
-            log_message(f"[GOT] Camera {cam} - image received {image.shape}")
-
+    for cam in used_cameras:
+        if cam not in images:
+            packet = watchers[cam].get_packet_nowait()
+            if packet is not None:
+                images[cam] = packet
     return images, temp_paths
-    
+
 def run_detection_for_cam(cam: str, image, roi_rules: list, batch_num: int) -> tuple:
     cam_roi_results = []
     cam_gui_items = []
@@ -618,432 +600,317 @@ def try_load_product_config(product_code: str):
         return False, None, None
 
 def main():
-    """
-    Chỉ xử lý khi tất cả camera có ảnh
-    - Khởi tạo ImageWatcher cho mỗi camera
-    - Chờ tất cả camera
-    - Xử lý 1 batch
-    - Print kết quả
-    - Lặp lại chờ batch tiếp
-    - Hỗ trợ đổi product code động (từ COM hoac config)
-    """
-    # Bien theo doi product code hien tai
+    """Main-thread GUI/COM coordinator; capture and AI never run on this thread."""
+    exit_code = 0
+    watchers = {}
+    gui = None
+    com_output = None
+    executor = None
+    future = None
+    job = None
+    job_items = {}
+    epoch = 0
+    batch_num = 0
     current_product_code = None
     last_product_event_id = None
-    roi_rules = None
-    used_cameras = None
-    
+    images = {}
+    last_images = {}
+    last_results = {}
+    last_gui_items = {}
+    pending_ng = set()
+    mode = "collect"
+    last_stats_at = time.monotonic()
+
+    def service_capture():
+        for cam, watcher in watchers.items():
+            for code, message in watcher.drain_events():
+                log_message(f"[CAPTURE {cam}] {code}: {message}")
+            watcher.check_health()  # fail-stop on overload; never send artificial OK
+
+    def configure_watchers(cameras):
+        # Same directory cannot unambiguously supply two cameras in this project.
+        if not cameras:
+            raise ValueError("Product configuration has no active cameras")
+        folders = {}
+        for cam in cameras:
+            folder = get_camera_folder(cam, camera_config, "input")
+            if not folder:
+                raise ValueError(f"Camera {cam} missing input folder")
+            canonical = os.path.normcase(os.path.realpath(folder))
+            # Never save our outputs/logs inside a producer-owned input tree.
+            for label, path in (("output_dir", globals().get("OUTPUT_DIR")),
+                                ("log_dir", globals().get("LOG_DIR"))):
+                if path:
+                    target = os.path.normcase(os.path.realpath(path))
+                    try:
+                        inside = os.path.commonpath([canonical, target]) == canonical
+                    except ValueError:
+                        inside = False  # different Windows drives
+                    if inside:
+                        raise ValueError(f"{label} must be outside input folder: {folder}")
+            if canonical in folders:
+                raise ValueError(
+                    f"{cam} and {folders[canonical]} share one input folder. "
+                    "Explicit filename-to-camera routing is required.")
+            folders[canonical] = cam
+        for cam in list(watchers):
+            if cam not in cameras:
+                watchers[cam].stop()
+                watchers[cam].reset()
+                for code, message in watchers[cam].drain_events():
+                    log_message(f"[CAPTURE REMOVED {cam}] {code}: {message}")
+                log_message(f"[CAPTURE REMOVED FINAL {cam}] {watchers[cam].stats()}")
+                del watchers[cam]
+        for cam in cameras:
+            if cam not in watchers:
+                input_folder = get_camera_folder(cam, camera_config, "input")
+                # temp_folder is not required by the RAM reader.
+                watcher = ImageWatcher(
+                    input_folder,
+                    poll_interval=CAMERA_POLL_INTERVAL,
+                    **ACQUISITION_OPTIONS)
+                watchers[cam] = watcher
+                watcher.start()
+                log_message(f"[INIT] Independent capture {cam}: {input_folder}; "
+                            f"poll={CAMERA_POLL_INTERVAL}s")
+
     try:
-        # Start COM Product Reader (neu mode=auto)
         if product_reader:
             product_reader.start()
-        
-        # Lay product code ban dau
         current_product_code = get_current_product_code()
         if PRODUCT_MODE == 'log' and product_reader:
             last_product_event_id = product_reader.get_event_id()
-        
-        # Load config
-        log_message("="*70)
-        log_message("SYSTEM STARTED - Waiting for camera images")
-        log_message(f"Product mode: {PRODUCT_MODE}")
-        log_message(f"Product code: {current_product_code}")
-        log_message("="*70)
-        
-        # Load product CSV - with retry logic
-        retry_count = 0
-        max_retries = 3
+
+        log_message(f"[START] product={current_product_code}; mode={PRODUCT_MODE}")
+        # Preserve retrying startup until a valid product configuration exists.
         while True:
             success, roi_rules, used_cameras = try_load_product_config(current_product_code)
             if success:
                 break
-            retry_count += 1
-            if retry_count >= max_retries:
-                log_message(f"[WARNING] Không thể load product '{current_product_code}' sau {max_retries} lần thử")
-                print(f"⏳  Đợi mã hàng hợp lệ...\n")
-                # Wait for a new product code (wait a bit before retrying)
-                for _ in range(50):  # Wait ~2.5 seconds (50 * 50ms)
-                    time.sleep(0.05)
-                    if product_reader:
-                        new_code = product_reader.get_current()
-                        if new_code and new_code != current_product_code:
-                            log_message(f"[RETRY] Product code changed: {current_product_code} → {new_code}")
-                            current_product_code = new_code
-                            break
-                retry_count = 0
-            else:   
-                time.sleep(0.5)  # Wait before retry
-        
-        # Load camera config
-        log_message("[LOADING] Camera configuration...")
+            time.sleep(0.5)
+            current_product_code = get_current_product_code()
+
         camera_config = load_camera_config(
             csv_file=CAMERA_CONFIG_CSV,
             create_folders=CAMERA_CREATE_FOLDERS,
-            verbose=False
-        )
+            verbose=False)
         print_camera_config_summary(camera_config)
-        
-        # Khởi tạo ImageWatcher cho mỗi camera
-        watchers = {}
-        for cam in used_cameras:
-            # Lấy folder từ config
-            input_folder = get_camera_folder(cam, camera_config, "input")
-            temp_folder = get_camera_folder(cam, camera_config, "temp")
-            
-            # Kiểm tra camera có được cấu hình không
-            if input_folder is None or temp_folder is None:
-                log_message(f"[ERROR] Camera {cam} is not configured in camera_config.csv!")
-                continue
-            
-            # Tạo folder nếu chưa có
-            os.makedirs(input_folder, exist_ok=True)
-            os.makedirs(temp_folder, exist_ok=True)
-            
-            # Khởi tạo watcher
-            watchers[cam] = ImageWatcher(input_folder, temp_folder, poll_interval=CAMERA_POLL_INTERVAL)
-            log_message(f"[INIT] ImageWatcher for {cam}: {input_folder}")
-        
-        batch_num = 0
-        images = {}  # Thu thap anh dan dan (non-blocking)
-        temp_paths = {}  # Track temp files de cleanup sau khi xu ly
-        last_images_by_cam = {}
-        last_roi_results_by_cam = {}
-        last_gui_items_by_cam = {}
-        
-        # Khoi tao GUI (dynamic window name)
-        gui_window_name = GUI_WINDOW_NAME_TEMPLATE.format(product_code=current_product_code)
-        gui = ResultGUI(window_name=gui_window_name, max_history=GUI_MAX_HISTORY)
-        gui.start()
-        
-        # Khoi tao COM Output
+
+        gui = ResultGUI(
+            window_name=GUI_WINDOW_NAME_TEMPLATE.format(product_code=current_product_code),
+            max_history=GUI_MAX_HISTORY)
+        if GUI_ENABLED:
+            gui.start()
         com_output = COMOutput(
-            port=COM_PORT,
-            baudrate=COM_BAUDRATE,
-            enabled=ENABLE_COM_OUTPUT,
-            retry_count=COM_RETRY
-        )
-        
-        log_message(f"[WAITING] Waiting for images from: {used_cameras}")
-        
-        # === VONG LAP CHINH (Non-blocking) ===
-        # Moi vong: kiem tra product change → poll anh → refresh GUI → xu ly neu du anh
+            port=COM_PORT, baudrate=COM_BAUDRATE,
+            enabled=ENABLE_COM_OUTPUT, retry_count=COM_RETRY)
+        executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="AI")
+        configure_watchers(used_cameras)
+        log_message(f"[WAITING] Cameras: {used_cameras}")
+
         while True:
-            
-            # --- Buoc 0: Kiem tra product code co thay doi khong ---
-            new_product_code = get_current_product_code()
-            is_new_event = False
-            if PRODUCT_MODE == 'log' and product_reader:
-                new_event_id = product_reader.get_event_id()
-                if last_product_event_id is None:
-                    last_product_event_id = new_event_id
-                elif new_event_id != last_product_event_id:
-                    is_new_event = True
-                    last_product_event_id = new_event_id
+            service_capture()
+            if (CAPTURE_STATS_INTERVAL > 0
+                    and time.monotonic() - last_stats_at >= CAPTURE_STATS_INTERVAL):
+                for cam, watcher in watchers.items():
+                    log_message(f"[CAPTURE STATS {cam}] {watcher.stats()}")
+                last_stats_at = time.monotonic()
 
-            if new_product_code != current_product_code or is_new_event:
-                log_message("="*70)
-                if new_product_code != current_product_code:
-                    log_message(f"[PRODUCT CHANGE] {current_product_code} → {new_product_code}")
-                else:
-                    log_message(f"[PRODUCT SCAN] {current_product_code} (repeat scan)")
-                log_message("="*70)
-                
-                # Try to load new product configuration
-                success, new_roi_rules, new_used_cameras = try_load_product_config(new_product_code)
-                
-                if success:
-                    # Update to new product
-                    current_product_code = new_product_code
-                    roi_rules = new_roi_rules
-                    used_cameras = new_used_cameras
-                    
-                    log_message(f"[RELOAD] Cameras: {used_cameras}")
-
-                    # Khoi tao ImageWatcher cho camera moi (neu chua co)
-                    for cam in used_cameras:
-                        if cam in watchers:
-                            continue
-
-                        input_folder = get_camera_folder(cam, camera_config, "input")
-                        temp_folder = get_camera_folder(cam, camera_config, "temp")
-
-                        if input_folder is None or temp_folder is None:
-                            log_message(f"[ERROR] Camera {cam} is not configured in camera_config.csv!")
-                            continue
-
-                        os.makedirs(input_folder, exist_ok=True)
-                        os.makedirs(temp_folder, exist_ok=True)
-
-                        watchers[cam] = ImageWatcher(input_folder, temp_folder, poll_interval=CAMERA_POLL_INTERVAL)
-                        log_message(f"[INIT] ImageWatcher for {cam}: {input_folder}")
-                    
-                    # A valid new scan starts a new image generation.  Discard any
-                    # partial batch and ignore images from the preceding product.
-                    images, temp_paths = reset_image_boundary_for_new_scan(
-                        watchers=watchers,
-                        used_cameras=used_cameras,
-                        temp_paths=temp_paths,
-                    )
-
-                    # Reset cache re-detect khi doi product
-                    last_images_by_cam = {}
-                    last_roi_results_by_cam = {}
-                    last_gui_items_by_cam = {}
-
-                    # Reset GUI ve trang thai ban dau
-                    gui.reset_display()
-
-                    # Update GUI window title
-                    gui.window_name = GUI_WINDOW_NAME_TEMPLATE.format(product_code=current_product_code)
-                    
-                else:
-                    # Product code không hợp lệ
-                    log_message(f"[WARNING] Product code '{new_product_code}' không hợp lệ")
-                    log_message(f"[WAITING] Giữ nguyên product: {current_product_code}")
-                    print(f"\n⏳  Đợi mã hàng hợp lệ (hiện tại: {current_product_code})...\n")
-            
-            # --- Buoc 1: Poll anh (KHONG block) ---
-            images, temp_paths = poll_cameras_once(watchers, used_cameras, images, temp_paths)
-            
-            # --- Buoc 2: Refresh GUI + doc phim (BAT BUOC moi vong) ---
-            action = gui.show(wait_time=30)
-            if action == 'quit':
-                log_message("[GUI] User pressed Quit")
+            # GUI remains on the main thread, including while inference runs.
+            action = gui.show(wait_time=30) if GUI_ENABLED else None
+            if not GUI_ENABLED:
+                time.sleep(0.03)
+            if action == "quit":
                 break
-            
-            # --- Buoc 3: Chua du anh → quay lai buoc 1 ---
-            if len(images) < len(used_cameras):
-                continue
-            
-            # --- Buoc 4: DU ANH → Xu ly batch ---
-            # (Logic xu ly GIU NGUYEN 100%)
-            batch_num += 1
-            log_message(f"[READY] All cameras ready. Processing batch #{batch_num}...")
-            
-            roi_results_by_cam = {}
-            gui_items_by_cam = {}
-            batch_start_time = time.time()
 
-            # Xu ly tung camera
-            for cam in used_cameras:
-                image = images[cam]
-                cam_roi_results, cam_gui_items = run_detection_for_cam(
-                    cam, image, roi_rules, batch_num
-                )
-                roi_results_by_cam[cam] = cam_roi_results
-                gui_items_by_cam[cam] = cam_gui_items
+            new_code = get_current_product_code()
+            new_event_id = (product_reader.get_event_id()
+                            if PRODUCT_MODE == 'log' and product_reader else None)
+            is_new_event = (new_event_id is not None
+                            and last_product_event_id is not None
+                            and new_event_id != last_product_event_id)
+            if new_code != current_product_code or is_new_event:
+                success, new_rules, new_cameras = try_load_product_config(new_code)
+                if new_event_id is not None:
+                    last_product_event_id = new_event_id
+                if success:
+                    epoch += 1
+                    # A running inference cannot be safely killed. Its result will
+                    # be ignored, including COM output, via the epoch guard below.
+                    configure_watchers(new_cameras)
+                    for watcher in watchers.values():
+                        watcher.reset()
+                    images = {}
+                    last_images = {}
+                    last_results = {}
+                    last_gui_items = {}
+                    pending_ng = set()
+                    mode = "collect"
+                    current_product_code = new_code
+                    roi_rules, used_cameras = new_rules, new_cameras
+                    gui.reset_display()
+                    gui.window_name = GUI_WINDOW_NAME_TEMPLATE.format(
+                        product_code=current_product_code)
+                    log_message(f"[BOUNDARY] product={new_code}; epoch={epoch}; "
+                                "old queued/decoded images explicitly invalidated")
 
-            roi_results = merge_cam_results(roi_results_by_cam, used_cameras)
-            gui_roi_items = merge_cam_results(gui_items_by_cam, used_cameras)
-
-            final_status, batch_time, batch_output_path = emit_batch_result(
-                roi_results,
-                gui_roi_items,
-                batch_num,
-                current_product_code,
-                gui,
-                com_output,
-                batch_start_time
-            )
-
-            if RESULT_SAVE_CSV_HISTORY:
-                append_history_csv(
-                    RESULT_CSV_HISTORY_PATH,
-                    {
-                        "batch_num": batch_num,
-                        "product_code": current_product_code,
-                        "batch_time": batch_time,
-                    },
-                    final_status,
-                    roi_results
-                )
-            
-            # === Cleanup temp files ===
-            for cam, temp_path in temp_paths.items():
+            # Never call result() until done(); no future waiting on GUI thread.
+            if future is not None:
+                if not future.done():
+                    continue
+                completed_job = job
+                completed_items = job_items
                 try:
-                    watchers[cam].cleanup_temp_file(temp_path)
-                except Exception as e:
-                    log_message(f"[CLEANUP] Error cleaning {cam} temp file: {e}")
+                    result = future.result()
+                except Exception:
+                    for watcher, packet in completed_items.values():
+                        watcher.discard(packet, "AI job failed")
+                    raise
+                finally:
+                    future = None
+                    job = None
+                    job_items = {}
 
-            # Cache ket qua batch de re-detect
-            last_images_by_cam = dict(images)
-            last_roi_results_by_cam = dict(roi_results_by_cam)
-            last_gui_items_by_cam = dict(gui_items_by_cam)
+                if completed_job["epoch"] != epoch:
+                    log_message("[AI] Obsolete product result suppressed; no COM sent")
+                    continue
 
-            # Auto re-detect (retry den khi OK cho moi CAM NG)
-            # Auto re-detect (retry den khi OK, xu ly ngay khi CAM NG co anh moi)
-            if final_status == "NG":
-                ng_cameras = get_ng_cameras(last_roi_results_by_cam)
-                if ng_cameras:
-                    log_message(f"[REDETECT] NG cameras: {ng_cameras}")
+                if completed_job["kind"] == "decode":
+                    images.update(result)
+                    continue
 
-                stop_requested = False
-                abort_redetect = False
+                if completed_job["kind"] == "batch":
+                    last_images = result["images"]
+                    last_results = result["results"]
+                    last_gui_items = result["gui_items"]
+                    images = {}
+                else:
+                    cam = completed_job["camera"]
+                    ng_ids = {
+                        item.get("roi_id")
+                        for item in last_results.get(cam, [])
+                        if not item.get("pass", True)
+                    }
+                    last_images[cam] = result["images"][cam]
+                    last_results[cam] = merge_updates_for_ng_rois(
+                        last_results.get(cam, []), result["results"][cam], ng_ids)
+                    last_gui_items[cam] = merge_updates_for_ng_rois(
+                        last_gui_items.get(cam, []), result["gui_items"][cam], ng_ids)
+                    if all(item.get("pass", False) for item in last_results[cam]):
+                        pending_ng.discard(cam)
 
-                pending_ng = set(ng_cameras)
-                re_images = {}
-                re_temp_paths = {}
+                merged_results = merge_cam_results(last_results, used_cameras)
+                merged_gui = merge_cam_results(last_gui_items, used_cameras)
 
-                while pending_ng and not stop_requested and not abort_redetect:
-                    log_message(f"[REDETECT] Waiting for new images from {sorted(pending_ng)}")
+                # GUI and existing COM ordering remain main-thread-owned.
+                # Saving the result/COM can still briefly block this thread,
+                # but NEVER holds source files or stops acquisition.
+                service_capture()
+                final_status, batch_time, _ = emit_batch_result(
+                    merged_results, merged_gui, completed_job["batch_num"],
+                    completed_job["product_code"], gui, com_output,
+                    result["started_at"])
+                if RESULT_SAVE_CSV_HISTORY:
+                    append_history_csv(
+                        RESULT_CSV_HISTORY_PATH,
+                        {"batch_num": completed_job["batch_num"],
+                         "product_code": completed_job["product_code"],
+                         "batch_time": batch_time},
+                        final_status, merged_results)
 
-                    # Kiem tra scan event moi (repeat scan cung ma) trong luc re-detect
-                    if PRODUCT_MODE == 'log' and product_reader:
-                        new_event_id = product_reader.get_event_id()
-                        if last_product_event_id is not None and new_event_id != last_product_event_id:
-                            log_message(f"[REDETECT] New scan event (same product: {current_product_code}), aborting redetect")
-                            abort_redetect = True
-                            break
+                if final_status == "OK":
+                    pending_ng = set()
+                    mode = ("wait_scan" if PRODUCT_MODE == 'log' and product_reader
+                            else "collect")
+                    if mode == "wait_scan":
+                        images = {}
+                        log_message("[WAIT] OK; waiting for next scan boundary")
+                else:
+                    if completed_job["kind"] == "batch":
+                        pending_ng = set(get_ng_cameras(last_results))
+                    mode = "redetect" if pending_ng else "collect"
+                    log_message(f"[REDETECT] pending={sorted(pending_ng)}")
+                continue
 
-                    # Kiem tra product code thay doi trong luc re-detect
-                    new_product_code = get_current_product_code()
-                    if new_product_code != current_product_code:
-                        log_message(f"[REDETECT] Product changed: {current_product_code} -> {new_product_code}")
-                        abort_redetect = True
-                        break
+            if mode == "wait_scan":
+                continue
 
-                    re_images, re_temp_paths = poll_cameras_once(
-                        watchers, list(pending_ng), re_images, re_temp_paths
-                    )
+            cameras_needed = (used_cameras if mode == "collect"
+                              else [cam for cam in used_cameras if cam in pending_ng])
 
-                    action = gui.show(wait_time=30)
-                    if action == 'quit':
-                        log_message("[GUI] User pressed Quit")
-                        stop_requested = True
-                        break
+            # Process ready images before dequeuing more: at most one decoded
+            # image per camera is retained by the coordinator.
+            if mode == "collect" and all(cam in images for cam in used_cameras):
+                batch_num += 1
+                job = {"kind": "batch", "epoch": epoch, "batch_num": batch_num,
+                       "product_code": current_product_code}
+                batch_images = {cam: images[cam] for cam in used_cameras}
+                images = {}
+                future = executor.submit(
+                    detect_images, batch_images, list(roi_rules),
+                    batch_num, run_detection_for_cam)
+                continue
 
-                    ready_cams = [cam for cam in list(pending_ng) if cam in re_images]
-                    if not ready_cams:
-                        continue
+            if mode == "redetect":
+                ready = [cam for cam in cameras_needed if cam in images]
+                if ready:
+                    cam = ready[0]
+                    batch_num += 1
+                    job = {"kind": "redetect", "epoch": epoch,
+                           "batch_num": batch_num, "camera": cam,
+                           "product_code": current_product_code}
+                    future = executor.submit(
+                        detect_images, {cam: images.pop(cam)}, list(roi_rules),
+                        batch_num, run_detection_for_cam)
+                    continue
 
-                    for cam in ready_cams:
-                        batch_num += 1
-                        batch_start_time = time.time()
+            packets = {}
+            for cam in cameras_needed:
+                if cam in images:
+                    continue
+                packet = watchers[cam].get_packet_nowait()
+                if packet is not None:
+                    packets[cam] = (watchers[cam], packet)
+            if packets:
+                job = {"kind": "decode", "epoch": epoch}
+                job_items = packets
+                future = executor.submit(
+                    decode_packets, packets,
+                    ACQUISITION_CFG.get('require_complete_markers', True),
+                    ACQUISITION_CFG.get('max_decoded_pixels', 40_000_000))
 
-                        image = re_images.pop(cam)
-                        previous_cam_results = last_roi_results_by_cam.get(cam, [])
-                        ng_roi_ids = {
-                            result.get("roi_id")
-                            for result in previous_cam_results
-                            if not result.get("pass", True)
-                        }
-
-                        if not ng_roi_ids:
-                            pending_ng.discard(cam)
-                            log_message(f"[REDETECT] {cam} has no NG ROI left, skip update")
-                            continue
-
-                        cam_roi_results, cam_gui_items = run_detection_for_cam(
-                            cam, image, roi_rules, batch_num
-                        )
-                        last_images_by_cam[cam] = image
-                        last_roi_results_by_cam[cam] = merge_updates_for_ng_rois(
-                            previous_cam_results,
-                            cam_roi_results,
-                            ng_roi_ids
-                        )
-                        last_gui_items_by_cam[cam] = merge_updates_for_ng_rois(
-                            last_gui_items_by_cam.get(cam, []),
-                            cam_gui_items,
-                            ng_roi_ids
-                        )
-
-                        roi_results = merge_cam_results(last_roi_results_by_cam, used_cameras)
-                        gui_roi_items = merge_cam_results(last_gui_items_by_cam, used_cameras)
-
-                        final_status, batch_time, batch_output_path = emit_batch_result(
-                            roi_results,
-                            gui_roi_items,
-                            batch_num,
-                            current_product_code,
-                            gui,
-                            com_output,
-                            batch_start_time
-                        )
-
-                        if RESULT_SAVE_CSV_HISTORY:
-                            append_history_csv(
-                                RESULT_CSV_HISTORY_PATH,
-                                {
-                                    "batch_num": batch_num,
-                                    "product_code": current_product_code,
-                                    "batch_time": batch_time,
-                                },
-                                final_status,
-                                roi_results
-                            )
-
-                        temp_path = re_temp_paths.pop(cam, None)
-                        if temp_path:
-                            try:
-                                watchers[cam].cleanup_temp_file(temp_path)
-                            except Exception as e:
-                                log_message(f"[CLEANUP] Error cleaning {cam} temp file: {e}")
-
-                        merged_cam_results = last_roi_results_by_cam.get(cam, [])
-                        cam_passed = all(result.get("pass", False) for result in merged_cam_results)
-                        if cam_passed:
-                            pending_ng.discard(cam)
-                            log_message(f"[REDETECT] {cam} is OK, stop retry")
-                        else:
-                            log_message(f"[REDETECT] {cam} still NG, retry")
-
-                if stop_requested:
-                    break
-
-            # Neu tat ca OK, dung cho den khi co lan quet tiep theo (LOG mode)
-            if final_status == "OK" and PRODUCT_MODE == 'log' and product_reader:
-                log_message("[WAIT] OK - waiting for next product scan...")
-                stop_requested = False
-                while True:
-                    action = gui.show()
-                    if action == 'quit':
-                        log_message("[GUI] User pressed Quit")
-                        stop_requested = True
-                        break
-
-                    new_event_id = product_reader.get_event_id()
-                    if last_product_event_id is None:
-                        last_product_event_id = new_event_id
-                    elif new_event_id != last_product_event_id:
-                        log_message("[WAIT] New product scan detected")
-                        break
-
-                if stop_requested:
-                    break
-            
-            # Reset cho batch tiep theo
-            images = {}
-            temp_paths = {}
-            log_message(f"[WAITING] Waiting for images from: {used_cameras}")
-    
-    except FileNotFoundError as e:
-        log_message(f"[FATAL] {e}")
-        print(f"\n[ERROR] File not found: {e}\n")
     except KeyboardInterrupt:
-        log_message("="*70)
-        log_message(f"SYSTEM STOPPED (User interrupted after {batch_num} batches)")
-        log_message("="*70)
-        print("\n[INFO] System stopped by user\n")
-    except Exception as e:
-        log_message(f"[FATAL] {str(e)}")
-        print(f"\n[ERROR] {str(e)}\n")
+        exit_code = 130
+        log_message(f"[STOP] Interrupted after {batch_num} detection jobs")
+    except Exception as exc:
+        exit_code = 2
+        log_message(f"[FATAL] {exc}")
+        print("Acquisition/AI stopped. The external producer is NOT stopped. "
+              "Do not treat this as an OK inspection result.")
     finally:
-        # Dong GUI, COM output va COM input an toan
-        try:
-            gui.close()
-        except Exception:
-            pass
-        try:
-            com_output.close()
-        except Exception:
-            pass
-        try:
-            if product_reader:
-                product_reader.stop()
-        except Exception:
-            pass
+        # Stop acquisition first; then drain/finish the single AI job safely.
+        for cam, watcher in watchers.items():
+            watcher.stop()
+            for code, message in watcher.drain_events():
+                log_message(f"[CAPTURE {cam}] {code}: {message}")
+        if executor is not None:
+            executor.shutdown(wait=True)
+        for cam, watcher in watchers.items():
+            # Explicitly account for packets still retained at shutdown.
+            watcher.discard_pending("shutdown before processing")
+            for code, message in watcher.drain_events():
+                log_message(f"[CAPTURE SHUTDOWN {cam}] {code}: {message}")
+            log_message(f"[CAPTURE FINAL {cam}] {watcher.stats()}")
+        for resource, method in (
+                (gui, "close"), (com_output, "close"), (product_reader, "stop")):
+            if resource is not None:
+                try:
+                    getattr(resource, method)()
+                except Exception as exc:
+                    log_message(f"[SHUTDOWN] {method}: {exc}")
+
+    return exit_code
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

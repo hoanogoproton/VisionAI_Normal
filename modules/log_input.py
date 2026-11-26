@@ -15,6 +15,7 @@ import os
 import re
 import time
 import threading
+from modules.shared_image_reader import open_shared_binary
 from datetime import datetime
 from typing import Optional
 
@@ -78,7 +79,7 @@ class LogBarcodeReader:
 
         try:
             size = os.path.getsize(log_path)
-            with open(log_path, "rb") as f:
+            with open_shared_binary(log_path) as f:
                 if size > self.tail_bytes:
                     f.seek(size - self.tail_bytes)
                 data = f.read()
@@ -126,7 +127,7 @@ class LogBarcodeReader:
             if file_size == self.file_offset:
                 return
 
-            with open(log_path, "rb") as f:
+            with open_shared_binary(log_path) as f:
                 f.seek(self.file_offset)
                 data = f.read()
                 self.file_offset = f.tell()
