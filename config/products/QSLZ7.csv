@@ -1,5 +1,4 @@
 roi_id,camera,model_name,class_id,class_name,detect_x_min,detect_y_min,detect_x_max,detect_y_max,compare_x_min,compare_y_min,compare_x_max,compare_y_max,confidence,check_mode,min_count,max_count,keypoint_idx_1,keypoint_idx_2,expected_angle,angle_tolerance,com_index
-roi_001,CAM1,MarkF,0,mark,2896,1516,3182,1809,2916,1559,3169,1791,0.3,compare,,,0,3,180,15,1
+roi_001,CAM1,MarkF,0,mark,2896,1516,3182,1809,2916,1559,3169,1791,0.3,count,1,1,0,3,180,15,1
 roi_002,CAM1,best,0,12A60,406,363,871,831,419,369,861,824,0.33,count,1,1,,,,,2
 roi_003,CAM2,best,0,12A60,2586,986,2971,1312,2592,996,2961,1299,0.33,count,1,1,,,,,2
-

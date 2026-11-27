@@ -4,7 +4,8 @@ from modules.image_watcher import ImageWatcher
 from modules.roi_manager import prepare_roi_data
 from modules.model_manager import get_model
 from modules.detector import detect_object
-from modules.comparator import compare_detection, compare_angle, is_center_inside_roi
+from modules.comparator import (compare_detection, compare_angle,
+                                is_center_inside_roi, compare_count_and_angle)
 from modules.result_manager import build_signal_payload, build_signal_summary
 from modules.result_visualizer import save_batch_result
 from modules.camera_config_loader import load_camera_config, get_camera_folder, print_camera_config_summary
@@ -283,6 +284,7 @@ def run_detection_for_cam(cam: str, image, roi_rules: list, batch_num: int) -> t
 
             check_mode = rule.get("check_mode", "compare")
             angle_info = {}
+            count_angle_details = {}
             detect_result = None
 
             if check_mode == "measure_width":
@@ -330,49 +332,26 @@ def run_detection_for_cam(cam: str, image, roi_rules: list, batch_num: int) -> t
                 )
 
             if check_mode == "count":
-                detections = detect_result.get("detections", [])
-
-                # DEBUG: In ra toan bo detections
-                log_message(f"  [COUNT DEBUG] {rule['roi_id']}: Total detections = {len(detections)}")
-                for idx, det in enumerate(detections):
-                    bbox = det["bbox"]
-                    center_x = (bbox[0] + bbox[2]) / 2
-                    center_y = (bbox[1] + bbox[3]) / 2
+                passed, reason, count_angle_details = compare_count_and_angle(
+                    detect_result,
+                    rule["compare_roi"],
+                    min_count=rule.get("min_count"),
+                    max_count=rule.get("max_count"),
+                    keypoint_idx_1=rule.get("keypoint_idx_1"),
+                    keypoint_idx_2=rule.get("keypoint_idx_2"),
+                    expected_angle=rule.get("expected_angle"),
+                    angle_tolerance=rule.get("angle_tolerance"),
+                )
+                log_message(
+                    f"  [COUNT] {rule['roi_id']}: "
+                    f"in_compare_roi={count_angle_details['detected_count']}, "
+                    f"min={rule.get('min_count')}, max={rule.get('max_count')}"
+                )
+                for angle_result in count_angle_details["angle_results"]:
                     log_message(
-                        f"    Detection {idx}: bbox={bbox}, center=({center_x:.1f}, {center_y:.1f}), conf={det['confidence']:.2f}"
+                        f"    [ANGLE] obj{angle_result['object_index']}: "
+                        f"{angle_result['reason']}"
                     )
-
-                log_message(f"  [COUNT DEBUG] compare_roi={rule['compare_roi']}")
-
-                # FIXED: Chi dem detections co trung tam nam trong compare_roi
-                valid_detections = [
-                    det for det in detections
-                    if is_center_inside_roi(det["bbox"], rule["compare_roi"])
-                ]
-                detected_count = len(valid_detections)
-
-                log_message(f"  [COUNT DEBUG] Valid detections in compare_roi = {detected_count}")
-
-                min_count = rule.get("min_count")
-                max_count = rule.get("max_count")
-                required_min = min_count if min_count is not None else 1
-
-                log_message(f"  [COUNT DEBUG] min_count={min_count}, max_count={max_count}, required_min={required_min}")
-
-                if max_count is None:
-                    passed = detected_count >= required_min
-                    reason = (
-                        f"COUNT_OK({detected_count}>={required_min})"
-                        if passed else f"COUNT_NG({detected_count}<{required_min})"
-                    )
-                else:
-                    passed = required_min <= detected_count <= max_count
-                    reason = (
-                        f"COUNT_OK({detected_count}/{required_min}-{max_count})"
-                        if passed else f"COUNT_NG({detected_count}/{required_min}-{max_count})"
-                    )
-
-                log_message(f"  [COUNT DEBUG] Logic: {required_min} <= {detected_count} <= {max_count} = {passed}")
             elif check_mode == "forbidden":
                 # Vung cam - KHONG DUOC CO object
                 detections = detect_result.get("detections", [])
@@ -425,6 +404,9 @@ def run_detection_for_cam(cam: str, image, roi_rules: list, batch_num: int) -> t
                 "reason": reason
             })
 
+            if check_mode == "count":
+                cam_roi_results[-1].update(count_angle_details)
+
             # === THEM: Gom data cho GUI ===
             gui_item = {
                 "roi_id": rule["roi_id"],
@@ -438,6 +420,9 @@ def run_detection_for_cam(cam: str, image, roi_rules: list, batch_num: int) -> t
                 "angle_info": angle_info,
                 "check_mode": check_mode,
             }
+
+            if check_mode == "count":
+                gui_item.update(count_angle_details)
 
             if check_mode == "measure_width":
                 gui_item["measurement_result"] = measurement_result

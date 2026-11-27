@@ -163,13 +163,54 @@ def draw_keypoints_and_angle(image: Any, detect_result: Dict[str, Any],
     cv2.putText(image, angle_text, (mid_x - 50, mid_y - 40), font, 0.5, color_line, 2)
 
 
+def draw_count_angle_results(image, angle_results, detect_roi=(0, 0, 0, 0),
+                             scale_factor=1.0):
+    """Draw each counted object's own keypoints, angle and OK/NG label.
+
+    Coordinates from detector/comparator are absolute image coordinates.
+    A nonzero detect_roi offset converts them into a resized ROI crop.
+    """
+    def point(xy):
+        return (int((xy[0] - detect_roi[0]) * scale_factor),
+                int((xy[1] - detect_roi[1]) * scale_factor))
+
+    for entry in angle_results:
+        det = entry["detection"]
+        color = (0, 200, 0) if entry["passed"] else (0, 0, 220)
+        keypoints = det.get("keypoints")
+        if keypoints is not None:
+            for index, kp in enumerate(keypoints):
+                if len(kp) < 2 or not np.isfinite(kp[:2]).all():
+                    continue
+                xy = point(kp)
+                cv2.circle(image, xy, 4, color, -1)
+                cv2.putText(image, str(index), (xy[0] + 6, xy[1] - 6),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
+        info = entry.get("angle_info", {})
+        if info:
+            kp1, kp2 = point(info["kp1"]), point(info["kp2"])
+            cv2.arrowedLine(image, kp1, kp2, color, 2, tipLength=0.2)
+            angle_label = f" {info['measured_angle']:.1f}deg"
+        else:
+            angle_label = ""
+        bbox = det.get("bbox")
+        if bbox is not None:
+            origin = point(bbox[:2])
+            label = (f"obj{entry['object_index']}: "
+                     f"{'OK' if entry['passed'] else 'NG'}{angle_label}")
+            cv2.putText(image, label,
+                        (max(0, origin[0]), max(15, origin[1] - 8)),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+
 def visualize_detection_result(
     image: Any,
     roi_data: Dict[str, Any],
     detect_result: Dict[str, Any],
     passed: bool,
     output_path: str = None,
-    angle_info: Dict[str, Any] = None
+    angle_info: Dict[str, Any] = None,
+    angle_results: List[Dict[str, Any]] = None
 ) -> Any:
     """
     Ve toan bo ket qua detection: detect_roi, compare_roi, bbox, status
@@ -230,6 +271,9 @@ def visualize_detection_result(
     if angle_info:
         draw_keypoints_and_angle(viz_image, detect_result, angle_info)
     
+    if angle_results:
+        draw_count_angle_results(viz_image, angle_results)
+
     # Ve status OK/NG
     status_text = "OK" if passed else "NG"
     draw_status(viz_image, status_text, roi_id)
@@ -383,6 +427,9 @@ def _draw_roi_crop_for_batch(item: Dict) -> np.ndarray:
         cy_pt = (by1 + by2) // 2
         cv2.circle(result_img, (cx_pt, cy_pt), 5, color, -1)
     
+    draw_count_angle_results(result_img, item.get("angle_results", []),
+                             detect_roi, scale_factor)
+
     # 5. Ve keypoints va goc (neu co) - TANG SCALE
     angle_info = item.get("angle_info")
     if angle_info and detect_result.get("found"):

@@ -95,7 +95,7 @@ def load_product_csv(csv_path):
 
     roi_rules = []
 
-    with open(csv_path, newline="", encoding="utf-8") as f:
+    with open(csv_path, newline="", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
 
         for index, row in enumerate(reader, start=1):

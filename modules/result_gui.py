@@ -15,6 +15,7 @@ import cv2
 import numpy as np
 from typing import Any, Dict, List, Tuple, Optional
 from modules.wire_measure import draw_measurement
+from modules.result_visualizer import draw_count_angle_results
 
 
 class ResultGUI:
@@ -389,6 +390,9 @@ class ResultGUI:
             cx_pt = (bx1 + bx2) // 2
             cy_pt = (by1 + by2) // 2
             cv2.circle(result_img, (cx_pt, cy_pt), 5, color, -1)
+
+        draw_count_angle_results(result_img, item.get("angle_results", []),
+                                 detect_roi, scale_factor)
 
         # 5. Keypoints and angle (scaled)
         angle_info = item.get("angle_info")
