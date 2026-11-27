@@ -406,7 +406,7 @@ class MainCoordinatorTests(unittest.TestCase):
                 product_reader=None, PRODUCT_MODE="manual",
                 GUI_ENABLED=True, GUI_WINDOW_NAME_TEMPLATE="{product_code}",
                 GUI_MAX_HISTORY=10, COM_PORT="X", COM_BAUDRATE=9600,
-                ENABLE_COM_OUTPUT=False, COM_RETRY=0,
+                ENABLE_COM_OUTPUT=False, COM_RETRY=0, CAPTURE_STATS_INTERVAL=0,
                 RESULT_SAVE_CSV_HISTORY=False, CAMERA_CONFIG_CSV="unused",
                 CAMERA_CREATE_FOLDERS=False, CAMERA_POLL_INTERVAL=0.005,
                 ACQUISITION_OPTIONS={}, ACQUISITION_CFG={},

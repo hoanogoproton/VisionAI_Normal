@@ -659,7 +659,24 @@ def main():
                 log_message(f"[INIT] Independent capture {cam}: {input_folder}; "
                             f"poll={CAMERA_POLL_INTERVAL}s")
 
+    def notify_new_log_barcode(barcode):
+        if not ENABLE_COM_OUTPUT:
+            return
+        if not com_output.enabled:
+            log_message(f"[COM] WARNING: cannot send n for barcode={barcode}; output unavailable")
+            return
+        if com_output.send_new_code():
+            log_message(f"[COM] New log barcode={barcode}; sent n\\r\\n")
+        else:
+            log_message(f"[COM] WARNING: failed to send n for barcode={barcode}")
+
     try:
+        # Connect before starting the log reader, including during CSV startup retries.
+        com_output = COMOutput(
+            port=COM_PORT, baudrate=COM_BAUDRATE,
+            enabled=ENABLE_COM_OUTPUT, retry_count=COM_RETRY)
+        if PRODUCT_MODE == 'log' and product_reader:
+            product_reader.on_new_barcode = notify_new_log_barcode
         if product_reader:
             product_reader.start()
         current_product_code = get_current_product_code()
@@ -686,9 +703,6 @@ def main():
             max_history=GUI_MAX_HISTORY)
         if GUI_ENABLED:
             gui.start()
-        com_output = COMOutput(
-            port=COM_PORT, baudrate=COM_BAUDRATE,
-            enabled=ENABLE_COM_OUTPUT, retry_count=COM_RETRY)
         executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="AI")
         configure_watchers(used_cameras)
         log_message(f"[WAITING] Cameras: {used_cameras}")

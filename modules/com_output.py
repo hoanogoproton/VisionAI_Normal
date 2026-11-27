@@ -171,6 +171,10 @@ class COMOutput:
         
         return False
     
+    def send_new_code(self) -> bool:
+        """Send the exact new-log-barcode notification: ASCII n + CR + LF."""
+        return self.send_result("n")
+
     def send_ok(self, extra_info: str = "") -> bool:
         """Gui tin hieu OK"""
         return self.send_result("OK", extra_info)

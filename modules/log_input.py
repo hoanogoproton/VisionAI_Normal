@@ -17,7 +17,7 @@ import time
 import threading
 from modules.shared_image_reader import open_shared_binary
 from datetime import datetime
-from typing import Optional
+from typing import Callable, Optional
 
 
 class LogBarcodeReader:
@@ -30,12 +30,16 @@ class LogBarcodeReader:
         date_folder_format: str = "%Y%m%d",
         poll_interval: float = 0.5,
         tail_bytes: int = 65536,
+        on_new_barcode: Optional[Callable[[str], None]] = None,
     ):
         self.base_dir = base_dir
         self.log_filename = log_filename
         self.date_folder_format = date_folder_format
         self.poll_interval = max(0.1, float(poll_interval))
         self.tail_bytes = max(4096, int(tail_bytes))
+
+        self.on_new_barcode = on_new_barcode
+        self.pending_bytes = b""
 
         self.current_barcode = None
         self.current_log_path = None
@@ -73,30 +77,49 @@ class LogBarcodeReader:
         barcode = self._normalize_barcode(matches[-1])
         return barcode or None
 
-    def _bootstrap_from_tail(self, log_path: str) -> None:
+    def _accept_barcode(self, barcode: str, notify: bool = True) -> None:
+        # A repeated code is still a new scan. Never deduplicate by product code.
+        with self.lock:
+            self.current_barcode = barcode
+            self.event_id += 1
+            self.total_received += 1
+        print(f"[LOG_INPUT] Received: '{barcode}' (Total: {self.total_received})")
+        # Callback runs outside the lock; COM remains owned by the main thread.
+        if notify and self.on_new_barcode is not None:
+            try:
+                self.on_new_barcode(barcode)
+            except Exception as exc:
+                self.total_errors += 1
+                print(f"[LOG_INPUT] WARNING: new-barcode callback error: {exc}")
+
+    def _consume_bytes(self, data: bytes, notify: bool = True) -> None:
+        # Do not acknowledge an incomplete line or a partially written barcode.
+        lines = (self.pending_bytes + data).split(b"\n")
+        self.pending_bytes = lines.pop()
+        for line in lines:
+            for raw_barcode in self.barcode_pattern.findall(self._decode_bytes(line)):
+                barcode = self._normalize_barcode(raw_barcode)
+                if barcode:
+                    self._accept_barcode(barcode, notify=notify)
+
+    def _bootstrap_from_tail(self, log_path: str, notify: bool = False) -> None:
         if not os.path.isfile(log_path):
             return
-
         try:
             size = os.path.getsize(log_path)
             with open_shared_binary(log_path) as f:
                 if size > self.tail_bytes:
                     f.seek(size - self.tail_bytes)
+                    f.readline()  # Skip a partial first line in the tail window.
                 data = f.read()
-
-            text = self._decode_bytes(data)
-            barcode = self._extract_latest_barcode(text)
-
-            with self.lock:
-                self.file_offset = size
-                if barcode:
-                    self.current_barcode = barcode
-                    self.event_id += 1
-                    self.total_received += 1
-
+                self.file_offset = f.tell()
+            lines = data.split(b"\n")
+            self.pending_bytes = lines.pop()
+            barcode = self._extract_latest_barcode(self._decode_bytes(b"\n".join(lines)))
             if barcode:
-                print(f"[LOG_INPUT] Latest barcode from tail: '{barcode}'")
-
+                # Startup restores the latest product, but does not send n for
+                # old log history. A runtime date-file switch is a new event.
+                self._accept_barcode(barcode, notify=notify)
         except Exception as e:
             self.total_errors += 1
             print(f"[LOG_INPUT] WARNING: bootstrap error: {e}")
@@ -112,9 +135,10 @@ class LogBarcodeReader:
         if log_path != self.current_log_path:
             self.current_log_path = log_path
             self.file_offset = 0
+            self.pending_bytes = b""
             print(f"[LOG_INPUT] Switched log file: {self.current_log_path}")
-            self._bootstrap_from_tail(log_path)
-            return
+            # A new day's file is new input: consume all complete scan lines,
+            # not only the latest one. Startup alone uses the historical tail.
 
         if not os.path.isfile(log_path):
             return
@@ -123,6 +147,7 @@ class LogBarcodeReader:
             file_size = os.path.getsize(log_path)
             if file_size < self.file_offset:
                 self.file_offset = 0
+                self.pending_bytes = b""
 
             if file_size == self.file_offset:
                 return
@@ -135,16 +160,7 @@ class LogBarcodeReader:
             if not data:
                 return
 
-            text = self._decode_bytes(data)
-            barcode = self._extract_latest_barcode(text)
-            if not barcode:
-                return
-
-            with self.lock:
-                self.current_barcode = barcode
-                self.event_id += 1
-                self.total_received += 1
-                print(f"[LOG_INPUT] Received: '{barcode}' (Total: {self.total_received})")
+            self._consume_bytes(data)
 
         except Exception as e:
             self.total_errors += 1
@@ -156,6 +172,8 @@ class LogBarcodeReader:
             return
         self.is_running = True
         self.current_log_path = self._build_log_path()
+        self.pending_bytes = b""
+        self.file_offset = 0
         print(f"[LOG_INPUT] Reader started (file={self.current_log_path})")
         self._bootstrap_from_tail(self.current_log_path)
 

@@ -62,7 +62,7 @@ class Harness:
             product_reader=Reader() if mode == "log" else None,
             PRODUCT_MODE=mode, GUI_ENABLED=True, GUI_WINDOW_NAME_TEMPLATE="{product_code}",
             GUI_MAX_HISTORY=10, COM_PORT="X", COM_BAUDRATE=9600,
-            ENABLE_COM_OUTPUT=False, COM_RETRY=0, RESULT_SAVE_CSV_HISTORY=False,
+            ENABLE_COM_OUTPUT=False, COM_RETRY=0, CAPTURE_STATS_INTERVAL=0, RESULT_SAVE_CSV_HISTORY=False,
             CAMERA_CONFIG_CSV="unused", CAMERA_CREATE_FOLDERS=False,
             CAMERA_POLL_INTERVAL=0.005, ACQUISITION_CFG={},
             ACQUISITION_OPTIONS={"queue_max_images":queue_size},
