@@ -4,8 +4,7 @@ from modules.image_watcher import ImageWatcher
 from modules.roi_manager import prepare_roi_data
 from modules.model_manager import get_model
 from modules.detector import detect_object
-from modules.comparator import (compare_detection, compare_angle,
-                                is_center_inside_roi, compare_count_and_angle)
+from modules.comparator import (is_center_inside_roi, compare_count_and_angle)
 from modules.result_manager import build_signal_payload, build_signal_summary
 from modules.result_visualizer import save_batch_result
 from modules.camera_config_loader import load_camera_config, get_camera_folder, print_camera_config_summary
@@ -331,7 +330,7 @@ def run_detection_for_cam(cam: str, image, roi_rules: list, batch_num: int) -> t
                     roi_offset=roi_offset
                 )
 
-            if check_mode == "count":
+            if check_mode in ("count", "compare"):
                 passed, reason, count_angle_details = compare_count_and_angle(
                     detect_result,
                     rule["compare_roi"],
@@ -343,7 +342,7 @@ def run_detection_for_cam(cam: str, image, roi_rules: list, batch_num: int) -> t
                     angle_tolerance=rule.get("angle_tolerance"),
                 )
                 log_message(
-                    f"  [COUNT] {rule['roi_id']}: "
+                    f"  [{check_mode.upper()}] {rule['roi_id']}: "
                     f"in_compare_roi={count_angle_details['detected_count']}, "
                     f"min={rule.get('min_count')}, max={rule.get('max_count')}"
                 )
@@ -368,28 +367,6 @@ def run_detection_for_cam(cam: str, image, roi_rules: list, batch_num: int) -> t
                 else:
                     passed = False
                     reason = f"FORBIDDEN_NG({detected_count}_found)"
-            elif check_mode == "compare":
-                passed, reason = compare_detection(
-                    detect_result,
-                    rule["compare_roi"]
-                )
-
-                # === Keypoint angle check (neu co config) ===
-                if rule.get("keypoint_idx_1") is not None:
-                    if detect_result.get("found"):
-                        # Tinh goc (luon tinh de hien thi debug)
-                        angle_passed, angle_reason, angle_info = compare_angle(
-                            detect_result,
-                            rule["keypoint_idx_1"],
-                            rule["keypoint_idx_2"],
-                            rule["expected_angle"],
-                            rule["angle_tolerance"]
-                        )
-                        # Goc sai -> NG (chi khi vi tri da OK)
-                        if passed and not angle_passed:
-                            passed = False
-                            reason = angle_reason
-
             status_str = "OK" if passed else "NG"
             log_message(f"  {rule['roi_id']}: {status_str} ({reason})")
 
@@ -404,7 +381,7 @@ def run_detection_for_cam(cam: str, image, roi_rules: list, batch_num: int) -> t
                 "reason": reason
             })
 
-            if check_mode == "count":
+            if check_mode in ("count", "compare"):
                 cam_roi_results[-1].update(count_angle_details)
 
             # === THEM: Gom data cho GUI ===
@@ -421,7 +398,7 @@ def run_detection_for_cam(cam: str, image, roi_rules: list, batch_num: int) -> t
                 "check_mode": check_mode,
             }
 
-            if check_mode == "count":
+            if check_mode in ("count", "compare"):
                 gui_item.update(count_angle_details)
 
             if check_mode == "measure_width":

@@ -1,9 +1,19 @@
-# Simplified image reset on product scan
+# Image boundaries with independent acquisition
 
-When a valid product scan is accepted, the application starts a new image batch:
+A valid product change or repeat log scan increments the main job epoch and each
+active watcher's generation. Queued/leased old packets are explicitly invalidated
+and counted; decoded cached images are cleared. Files already present at reset
+are treated as old. New files or versions observed later can be collected.
 
-1. Temporary files from a partial previous batch are removed.
-2. Each active camera watcher scans its input folder and marks all files currently present as old.
-3. Only files that appear later, or are overwritten later, are collected for detection.
+A source read already running cannot be safely cancelled. Its old-generation
+snapshot is discarded when the read completes. An inference already running
+finishes on the single AI worker; its obsolete result does not reach GUI/COM.
 
-No image file timestamp is compared with the scan time. Therefore, a file that is copied into the camera folder after the reset is accepted even if that file preserves an older source timestamp.
+This preserves the original "ignore existing images on accepted scan" policy,
+not an exactly-once product association protocol. A valid image that is already
+present before reset is intentionally ignored. Polling cannot see a version that
+appears and disappears entirely between scans. Exact association/loss prevention
+requires producer frame/batch IDs and a retention/acknowledgement protocol.
+
+No source images or temporary copies are deleted. Shutdown and product-boundary
+discards are logged explicitly. See ASYNC_READING_VI.md for deployment and limits.

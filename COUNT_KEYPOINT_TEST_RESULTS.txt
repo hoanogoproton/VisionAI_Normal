@@ -1,0 +1,309 @@
+COUNT + KEYPOINT VERIFICATION
+
+New count/keypoint suite:
+test_allowed_empty (test_count_keypoint.CountAngleTests.test_allowed_empty) ... ok
+test_bad_angle_not_removed_from_count (test_count_keypoint.CountAngleTests.test_bad_angle_not_removed_from_count) ... ok
+test_center_on_boundary (test_count_keypoint.CountAngleTests.test_center_on_boundary) ... ok
+test_count_only_backwards_compatible (test_count_keypoint.CountAngleTests.test_count_only_backwards_compatible) ... ok
+test_csv_example_with_bom (test_count_keypoint.CountAngleTests.test_csv_example_with_bom) ... ok
+test_degenerate_points (test_count_keypoint.CountAngleTests.test_degenerate_points) ... ok
+test_empty_default_ng (test_count_keypoint.CountAngleTests.test_empty_default_ng) ... ok
+test_empty_invalid_config (test_count_keypoint.CountAngleTests.test_empty_invalid_config) ... ok
+test_input_not_modified (test_count_keypoint.CountAngleTests.test_input_not_modified) ... ok
+test_invalid_counts (test_count_keypoint.CountAngleTests.test_invalid_counts) ... ok
+test_invalid_tolerance (test_count_keypoint.CountAngleTests.test_invalid_tolerance) ... ok
+test_lower_confidence_bad_not_ignored (test_count_keypoint.CountAngleTests.test_lower_confidence_bad_not_ignored) ... ok
+test_malformed_bbox (test_count_keypoint.CountAngleTests.test_malformed_bbox) ... ok
+test_missing_keypoints (test_count_keypoint.CountAngleTests.test_missing_keypoints) ... ok
+test_negative_and_same_indices (test_count_keypoint.CountAngleTests.test_negative_and_same_indices) ... ok
+test_nonfinite_points (test_count_keypoint.CountAngleTests.test_nonfinite_points) ... ok
+test_normalize_expected_angle (test_count_keypoint.CountAngleTests.test_normalize_expected_angle) ... ok
+test_one_bad (test_count_keypoint.CountAngleTests.test_one_bad) ... ok
+test_one_good (test_count_keypoint.CountAngleTests.test_one_good) ... ok
+test_out_of_range_index (test_count_keypoint.CountAngleTests.test_out_of_range_index) ... ok
+test_outside_high_confidence_ignored (test_count_keypoint.CountAngleTests.test_outside_high_confidence_ignored) ... ok
+test_partial_angle_config (test_count_keypoint.CountAngleTests.test_partial_angle_config) ... ok
+test_single_detection_legacy_format (test_count_keypoint.CountAngleTests.test_single_detection_legacy_format) ... ok
+test_two_good_but_excess_count (test_count_keypoint.CountAngleTests.test_two_good_but_excess_count) ... ok
+test_two_good_exact_two (test_count_keypoint.CountAngleTests.test_two_good_exact_two) ... ok
+test_unbounded_max_and_default_min (test_count_keypoint.CountAngleTests.test_unbounded_max_and_default_min) ... ok
+test_wrap_360 (test_count_keypoint.CountAngleTests.test_wrap_360) ... ok
+test_main_bad_angle_ng (test_count_keypoint.MainCountIntegrationTests.test_main_bad_angle_ng) ... ok
+test_main_emits_count_and_angle_details (test_count_keypoint.MainCountIntegrationTests.test_main_emits_count_and_angle_details) ... ok
+test_main_excess_two_good_ng (test_count_keypoint.MainCountIntegrationTests.test_main_excess_two_good_ng) ... ok
+
+----------------------------------------------------------------------
+Ran 30 tests in 0.023s
+
+OK
+
+Overlay helper, saved batch and GUI:
+Overlay helper coordinate transform + saved batch + GUI: PASS
+
+Full updated suite:
+Acquisition/AI stopped. The external producer is NOT stopped. Do not treat this as an OK inspection result.
+Acquisition/AI stopped. The external producer is NOT stopped. Do not treat this as an OK inspection result.
+Acquisition/AI stopped. The external producer is NOT stopped. Do not treat this as an OK inspection result.
+Acquisition/AI stopped. The external producer is NOT stopped. Do not treat this as an OK inspection result.
+Acquisition/AI stopped. The external producer is NOT stopped. Do not treat this as an OK inspection result.
+Acquisition/AI stopped. The external producer is NOT stopped. Do not treat this as an OK inspection result.
+test_all_three_images_are_fifo_and_not_discarded (test_async_acquisition.CaptureTests.test_all_three_images_are_fifo_and_not_discarded) ... ok
+test_byte_budget_overload (test_async_acquisition.CaptureTests.test_byte_budget_overload) ... ok
+test_decode_failure_is_not_success_and_retries (test_async_acquisition.CaptureTests.test_decode_failure_is_not_success_and_retries) ... ok
+test_disappearance_between_scan_and_open_is_bounded (test_async_acquisition.CaptureTests.test_disappearance_between_scan_and_open_is_bounded) ... ok
+test_initial_files_ignored_and_no_temp_created (test_async_acquisition.CaptureTests.test_initial_files_ignored_and_no_temp_created) ... ok
+test_metadata_change_during_read_rejected_and_fd_closed (test_async_acquisition.CaptureTests.test_metadata_change_during_read_rejected_and_fd_closed) ... ok
+test_missing_after_decode_error_is_not_retried_forever (test_async_acquisition.CaptureTests.test_missing_after_decode_error_is_not_retried_forever) ... ok
+test_overload_is_latched_no_drop_oldest (test_async_acquisition.CaptureTests.test_overload_is_latched_no_drop_oldest) ... ok
+test_oversized_input_is_error_not_queue_overload (test_async_acquisition.CaptureTests.test_oversized_input_is_error_not_queue_overload) ... ok
+test_partial_write_then_complete_is_recovered (test_async_acquisition.CaptureTests.test_partial_write_then_complete_is_recovered) ... ok
+test_reader_limit_and_fd_closed_on_error (test_async_acquisition.CaptureTests.test_reader_limit_and_fd_closed_on_error) ... ok
+test_reads_bytes_and_source_can_be_deleted_before_decode (test_async_acquisition.CaptureTests.test_reads_bytes_and_source_can_be_deleted_before_decode) ... ok
+test_real_poll_schedule_and_one_enumeration_per_scan (test_async_acquisition.CaptureTests.test_real_poll_schedule_and_one_enumeration_per_scan) ... ok
+test_reset_during_read_cannot_enqueue_stale_packet (test_async_acquisition.CaptureTests.test_reset_during_read_cannot_enqueue_stale_packet) ... ok
+test_reset_rejects_old_lease_and_ignores_existing (test_async_acquisition.CaptureTests.test_reset_rejects_old_lease_and_ignores_existing) ... ok
+test_same_filename_two_versions_preserved (test_async_acquisition.CaptureTests.test_same_filename_two_versions_preserved) ... ok
+test_shared_read_preserves_scanner_version_token (test_async_acquisition.CaptureTests.test_shared_read_preserves_scanner_version_token) ... ok
+test_slow_ai_does_not_stop_capture (test_async_acquisition.CaptureTests.test_slow_ai_does_not_stop_capture) ... ok
+test_transient_sharing_violation_retries_then_succeeds (test_async_acquisition.CaptureTests.test_transient_sharing_violation_retries_then_succeeds) ... ok
+test_windows_scan_handle_comparison_uses_common_native_fields (test_async_acquisition.CaptureTests.test_windows_scan_handle_comparison_uses_common_native_fields) ... ok
+test_real_main_control_flow_fifo_and_gui_during_ai (test_async_acquisition.MainCoordinatorTests.test_real_main_control_flow_fifo_and_gui_during_ai) ... FAIL
+test_delete_while_reader_handle_is_open (test_async_acquisition.WindowsSharingTests.test_delete_while_reader_handle_is_open) ... skipped 'Real Windows sharing test'
+test_exclusive_writer_is_not_bypassed (test_async_acquisition.WindowsSharingTests.test_exclusive_writer_is_not_bypassed) ... skipped 'Real Windows sharing test'
+test_rename_while_reader_handle_is_open (test_async_acquisition.WindowsSharingTests.test_rename_while_reader_handle_is_open) ... skipped 'Real Windows rename sharing test'
+test_scanned_token_matches_native_windows_handle (test_async_acquisition.WindowsSharingTests.test_scanned_token_matches_native_windows_handle) ... skipped 'Real Windows metadata test'
+test_allowed_empty (test_count_keypoint.CountAngleTests.test_allowed_empty) ... ok
+test_bad_angle_not_removed_from_count (test_count_keypoint.CountAngleTests.test_bad_angle_not_removed_from_count) ... ok
+test_center_on_boundary (test_count_keypoint.CountAngleTests.test_center_on_boundary) ... ok
+test_count_only_backwards_compatible (test_count_keypoint.CountAngleTests.test_count_only_backwards_compatible) ... ok
+test_csv_example_with_bom (test_count_keypoint.CountAngleTests.test_csv_example_with_bom) ... ok
+test_degenerate_points (test_count_keypoint.CountAngleTests.test_degenerate_points) ... ok
+test_empty_default_ng (test_count_keypoint.CountAngleTests.test_empty_default_ng) ... ok
+test_empty_invalid_config (test_count_keypoint.CountAngleTests.test_empty_invalid_config) ... ok
+test_input_not_modified (test_count_keypoint.CountAngleTests.test_input_not_modified) ... ok
+test_invalid_counts (test_count_keypoint.CountAngleTests.test_invalid_counts) ... ok
+test_invalid_tolerance (test_count_keypoint.CountAngleTests.test_invalid_tolerance) ... ok
+test_lower_confidence_bad_not_ignored (test_count_keypoint.CountAngleTests.test_lower_confidence_bad_not_ignored) ... ok
+test_malformed_bbox (test_count_keypoint.CountAngleTests.test_malformed_bbox) ... ok
+test_missing_keypoints (test_count_keypoint.CountAngleTests.test_missing_keypoints) ... ok
+test_negative_and_same_indices (test_count_keypoint.CountAngleTests.test_negative_and_same_indices) ... ok
+test_nonfinite_points (test_count_keypoint.CountAngleTests.test_nonfinite_points) ... ok
+test_normalize_expected_angle (test_count_keypoint.CountAngleTests.test_normalize_expected_angle) ... ok
+test_one_bad (test_count_keypoint.CountAngleTests.test_one_bad) ... ok
+test_one_good (test_count_keypoint.CountAngleTests.test_one_good) ... ok
+test_out_of_range_index (test_count_keypoint.CountAngleTests.test_out_of_range_index) ... ok
+test_outside_high_confidence_ignored (test_count_keypoint.CountAngleTests.test_outside_high_confidence_ignored) ... ok
+test_partial_angle_config (test_count_keypoint.CountAngleTests.test_partial_angle_config) ... ok
+test_single_detection_legacy_format (test_count_keypoint.CountAngleTests.test_single_detection_legacy_format) ... ok
+test_two_good_but_excess_count (test_count_keypoint.CountAngleTests.test_two_good_but_excess_count) ... ok
+test_two_good_exact_two (test_count_keypoint.CountAngleTests.test_two_good_exact_two) ... ok
+test_unbounded_max_and_default_min (test_count_keypoint.CountAngleTests.test_unbounded_max_and_default_min) ... ok
+test_wrap_360 (test_count_keypoint.CountAngleTests.test_wrap_360) ... ok
+test_main_bad_angle_ng (test_count_keypoint.MainCountIntegrationTests.test_main_bad_angle_ng) ... ok
+test_main_emits_count_and_angle_details (test_count_keypoint.MainCountIntegrationTests.test_main_emits_count_and_angle_details) ... ok
+test_main_excess_two_good_ng (test_count_keypoint.MainCountIntegrationTests.test_main_excess_two_good_ng) ... ok
+test_overload_aborts_before_pending_result_emission (test_main_state_machine.StateMachineTests.test_overload_aborts_before_pending_result_emission) ... FAIL
+test_product_change_during_inference_suppresses_old_com_result (test_main_state_machine.StateMachineTests.test_product_change_during_inference_suppresses_old_com_result) ... FAIL
+test_redetect_only_updates_previously_ng_rois (test_main_state_machine.StateMachineTests.test_redetect_only_updates_previously_ng_rois) ... FAIL
+test_repeat_scan_same_product_invalidates_old_job (test_main_state_machine.StateMachineTests.test_repeat_scan_same_product_invalidates_old_job) ... FAIL
+test_two_camera_three_batches_fifo (test_main_state_machine.StateMachineTests.test_two_camera_three_batches_fifo) ... FAIL
+
+======================================================================
+FAIL: test_real_main_control_flow_fifo_and_gui_during_ai (test_async_acquisition.MainCoordinatorTests.test_real_main_control_flow_fifo_and_gui_during_ai)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/count_keypoint_work/AiVisionUPLOAD/tests/test_async_acquisition.py", line 423, in test_real_main_control_flow_fifo_and_gui_during_ai
+    self.assertEqual(detected, [30,31,32])
+AssertionError: Lists differ: [] != [30, 31, 32]
+
+Second list contains 3 additional elements.
+First extra element 0:
+30
+
+- []
++ [30, 31, 32]
+
+======================================================================
+FAIL: test_overload_aborts_before_pending_result_emission (test_main_state_machine.StateMachineTests.test_overload_aborts_before_pending_result_emission)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/count_keypoint_work/AiVisionUPLOAD/tests/test_main_state_machine.py", line 195, in test_overload_aborts_before_pending_result_emission
+    self.assertEqual(h.watchers[0].stats()["overloads"],1)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_product_change_during_inference_suppresses_old_com_result (test_main_state_machine.StateMachineTests.test_product_change_during_inference_suppresses_old_com_result)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/count_keypoint_work/AiVisionUPLOAD/tests/test_main_state_machine.py", line 112, in test_product_change_during_inference_suppresses_old_com_result
+    self.assertEqual([entry[0] for entry in h.emitted],["P2"])
+AssertionError: Lists differ: [] != ['P2']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'P2'
+
+- []
++ ['P2']
+
+======================================================================
+FAIL: test_redetect_only_updates_previously_ng_rois (test_main_state_machine.StateMachineTests.test_redetect_only_updates_previously_ng_rois)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/count_keypoint_work/AiVisionUPLOAD/tests/test_main_state_machine.py", line 158, in test_redetect_only_updates_previously_ng_rois
+    self.assertEqual([entry[1] for entry in h.emitted],["NG","OK"])
+AssertionError: Lists differ: [] != ['NG', 'OK']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'NG'
+
+- []
++ ['NG', 'OK']
+
+======================================================================
+FAIL: test_repeat_scan_same_product_invalidates_old_job (test_main_state_machine.StateMachineTests.test_repeat_scan_same_product_invalidates_old_job)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/count_keypoint_work/AiVisionUPLOAD/tests/test_main_state_machine.py", line 135, in test_repeat_scan_same_product_invalidates_old_job
+    self.assertEqual(len(h.emitted),1)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_two_camera_three_batches_fifo (test_main_state_machine.StateMachineTests.test_two_camera_three_batches_fifo)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/count_keypoint_work/AiVisionUPLOAD/tests/test_main_state_machine.py", line 173, in test_two_camera_three_batches_fifo
+    self.assertEqual([entry[1] for entry in h.detected],[10,20,11,21,12,22])
+AssertionError: Lists differ: [] != [10, 20, 11, 21, 12, 22]
+
+Second list contains 6 additional elements.
+First extra element 0:
+10
+
+- []
++ [10, 20, 11, 21, 12, 22]
+
+----------------------------------------------------------------------
+Ran 60 tests in 0.796s
+
+FAILED (failures=6, skipped=4)
+
+Original ZIP baseline:
+Acquisition/AI stopped. The external producer is NOT stopped. Do not treat this as an OK inspection result.
+Acquisition/AI stopped. The external producer is NOT stopped. Do not treat this as an OK inspection result.
+Acquisition/AI stopped. The external producer is NOT stopped. Do not treat this as an OK inspection result.
+Acquisition/AI stopped. The external producer is NOT stopped. Do not treat this as an OK inspection result.
+Acquisition/AI stopped. The external producer is NOT stopped. Do not treat this as an OK inspection result.
+Acquisition/AI stopped. The external producer is NOT stopped. Do not treat this as an OK inspection result.
+test_all_three_images_are_fifo_and_not_discarded (test_async_acquisition.CaptureTests.test_all_three_images_are_fifo_and_not_discarded) ... ok
+test_byte_budget_overload (test_async_acquisition.CaptureTests.test_byte_budget_overload) ... ok
+test_decode_failure_is_not_success_and_retries (test_async_acquisition.CaptureTests.test_decode_failure_is_not_success_and_retries) ... ok
+test_disappearance_between_scan_and_open_is_bounded (test_async_acquisition.CaptureTests.test_disappearance_between_scan_and_open_is_bounded) ... ok
+test_initial_files_ignored_and_no_temp_created (test_async_acquisition.CaptureTests.test_initial_files_ignored_and_no_temp_created) ... ok
+test_metadata_change_during_read_rejected_and_fd_closed (test_async_acquisition.CaptureTests.test_metadata_change_during_read_rejected_and_fd_closed) ... ok
+test_missing_after_decode_error_is_not_retried_forever (test_async_acquisition.CaptureTests.test_missing_after_decode_error_is_not_retried_forever) ... ok
+test_overload_is_latched_no_drop_oldest (test_async_acquisition.CaptureTests.test_overload_is_latched_no_drop_oldest) ... ok
+test_oversized_input_is_error_not_queue_overload (test_async_acquisition.CaptureTests.test_oversized_input_is_error_not_queue_overload) ... ok
+test_partial_write_then_complete_is_recovered (test_async_acquisition.CaptureTests.test_partial_write_then_complete_is_recovered) ... ok
+test_reader_limit_and_fd_closed_on_error (test_async_acquisition.CaptureTests.test_reader_limit_and_fd_closed_on_error) ... ok
+test_reads_bytes_and_source_can_be_deleted_before_decode (test_async_acquisition.CaptureTests.test_reads_bytes_and_source_can_be_deleted_before_decode) ... ok
+test_real_poll_schedule_and_one_enumeration_per_scan (test_async_acquisition.CaptureTests.test_real_poll_schedule_and_one_enumeration_per_scan) ... ok
+test_reset_during_read_cannot_enqueue_stale_packet (test_async_acquisition.CaptureTests.test_reset_during_read_cannot_enqueue_stale_packet) ... ok
+test_reset_rejects_old_lease_and_ignores_existing (test_async_acquisition.CaptureTests.test_reset_rejects_old_lease_and_ignores_existing) ... ok
+test_same_filename_two_versions_preserved (test_async_acquisition.CaptureTests.test_same_filename_two_versions_preserved) ... ok
+test_shared_read_preserves_scanner_version_token (test_async_acquisition.CaptureTests.test_shared_read_preserves_scanner_version_token) ... ok
+test_slow_ai_does_not_stop_capture (test_async_acquisition.CaptureTests.test_slow_ai_does_not_stop_capture) ... ok
+test_transient_sharing_violation_retries_then_succeeds (test_async_acquisition.CaptureTests.test_transient_sharing_violation_retries_then_succeeds) ... ok
+test_windows_scan_handle_comparison_uses_common_native_fields (test_async_acquisition.CaptureTests.test_windows_scan_handle_comparison_uses_common_native_fields) ... ok
+test_real_main_control_flow_fifo_and_gui_during_ai (test_async_acquisition.MainCoordinatorTests.test_real_main_control_flow_fifo_and_gui_during_ai) ... FAIL
+test_delete_while_reader_handle_is_open (test_async_acquisition.WindowsSharingTests.test_delete_while_reader_handle_is_open) ... skipped 'Real Windows sharing test'
+test_exclusive_writer_is_not_bypassed (test_async_acquisition.WindowsSharingTests.test_exclusive_writer_is_not_bypassed) ... skipped 'Real Windows sharing test'
+test_rename_while_reader_handle_is_open (test_async_acquisition.WindowsSharingTests.test_rename_while_reader_handle_is_open) ... skipped 'Real Windows rename sharing test'
+test_scanned_token_matches_native_windows_handle (test_async_acquisition.WindowsSharingTests.test_scanned_token_matches_native_windows_handle) ... skipped 'Real Windows metadata test'
+test_overload_aborts_before_pending_result_emission (test_main_state_machine.StateMachineTests.test_overload_aborts_before_pending_result_emission) ... FAIL
+test_product_change_during_inference_suppresses_old_com_result (test_main_state_machine.StateMachineTests.test_product_change_during_inference_suppresses_old_com_result) ... FAIL
+test_redetect_only_updates_previously_ng_rois (test_main_state_machine.StateMachineTests.test_redetect_only_updates_previously_ng_rois) ... FAIL
+test_repeat_scan_same_product_invalidates_old_job (test_main_state_machine.StateMachineTests.test_repeat_scan_same_product_invalidates_old_job) ... FAIL
+test_two_camera_three_batches_fifo (test_main_state_machine.StateMachineTests.test_two_camera_three_batches_fifo) ... FAIL
+
+======================================================================
+FAIL: test_real_main_control_flow_fifo_and_gui_during_ai (test_async_acquisition.MainCoordinatorTests.test_real_main_control_flow_fifo_and_gui_during_ai)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/count_keypoint_baseline/AiVisionUPLOAD/tests/test_async_acquisition.py", line 423, in test_real_main_control_flow_fifo_and_gui_during_ai
+    self.assertEqual(detected, [30,31,32])
+AssertionError: Lists differ: [] != [30, 31, 32]
+
+Second list contains 3 additional elements.
+First extra element 0:
+30
+
+- []
++ [30, 31, 32]
+
+======================================================================
+FAIL: test_overload_aborts_before_pending_result_emission (test_main_state_machine.StateMachineTests.test_overload_aborts_before_pending_result_emission)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/count_keypoint_baseline/AiVisionUPLOAD/tests/test_main_state_machine.py", line 195, in test_overload_aborts_before_pending_result_emission
+    self.assertEqual(h.watchers[0].stats()["overloads"],1)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_product_change_during_inference_suppresses_old_com_result (test_main_state_machine.StateMachineTests.test_product_change_during_inference_suppresses_old_com_result)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/count_keypoint_baseline/AiVisionUPLOAD/tests/test_main_state_machine.py", line 112, in test_product_change_during_inference_suppresses_old_com_result
+    self.assertEqual([entry[0] for entry in h.emitted],["P2"])
+AssertionError: Lists differ: [] != ['P2']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'P2'
+
+- []
++ ['P2']
+
+======================================================================
+FAIL: test_redetect_only_updates_previously_ng_rois (test_main_state_machine.StateMachineTests.test_redetect_only_updates_previously_ng_rois)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/count_keypoint_baseline/AiVisionUPLOAD/tests/test_main_state_machine.py", line 158, in test_redetect_only_updates_previously_ng_rois
+    self.assertEqual([entry[1] for entry in h.emitted],["NG","OK"])
+AssertionError: Lists differ: [] != ['NG', 'OK']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'NG'
+
+- []
++ ['NG', 'OK']
+
+======================================================================
+FAIL: test_repeat_scan_same_product_invalidates_old_job (test_main_state_machine.StateMachineTests.test_repeat_scan_same_product_invalidates_old_job)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/count_keypoint_baseline/AiVisionUPLOAD/tests/test_main_state_machine.py", line 135, in test_repeat_scan_same_product_invalidates_old_job
+    self.assertEqual(len(h.emitted),1)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_two_camera_three_batches_fifo (test_main_state_machine.StateMachineTests.test_two_camera_three_batches_fifo)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/data/count_keypoint_baseline/AiVisionUPLOAD/tests/test_main_state_machine.py", line 173, in test_two_camera_three_batches_fifo
+    self.assertEqual([entry[1] for entry in h.detected],[10,20,11,21,12,22])
+AssertionError: Lists differ: [] != [10, 20, 11, 21, 12, 22]
+
+Second list contains 6 additional elements.
+First extra element 0:
+10
+
+- []
++ [10, 20, 11, 21, 12, 22]
+
+----------------------------------------------------------------------
+Ran 30 tests in 0.785s
+
+FAILED (failures=6, skipped=4)

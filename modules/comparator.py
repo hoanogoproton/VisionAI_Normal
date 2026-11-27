@@ -18,27 +18,15 @@ def is_center_inside_roi(bbox, roi):
     return rx1 <= center_x <= rx2 and ry1 <= center_y <= ry2
 
 
-def compare_detection(detect_result, compare_roi):
-    """
-    Hàm chính để so sánh kết quả detect với vùng ROI.
-    """
-    detections = detect_result.get("detections")
-    if detections is not None:
-        if not detections:
-            return False, "NOT_FOUND"
-        best_det = max(detections, key=lambda det: det.get("confidence", 0.0))
-        bbox = best_det.get("bbox")
-    else:
-        if not detect_result.get("found", False):
-            return False, "NOT_FOUND"
-        bbox = detect_result.get("bbox")
-    if not bbox:
-        return False, "INVALID_BBOX"
+def compare_detection(detect_result, compare_roi, min_count=None, max_count=None):
+    """Check ALL centers in ROI against inclusive count limits.
 
-    if not is_center_inside_roi(bbox, compare_roi):
-        return False, "OUT_OF_COMPARE_ROI"
-
-    return True, "OK"
+    Keep the two-value return interface for existing callers.
+    Use compare_count_and_angle when per-object angle details are needed.
+    """
+    passed, reason, _ = compare_count_and_angle(
+        detect_result, compare_roi, min_count=min_count, max_count=max_count)
+    return passed, reason
 
 
 def compare_angle(detect_result, keypoint_idx_1, keypoint_idx_2,

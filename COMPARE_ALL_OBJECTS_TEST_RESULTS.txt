@@ -1,0 +1,140 @@
+[LOG_INPUT] Reader started (file=/tmp/tmpn4018nrx/20261127/WH_AVIS_System.log)
+[LOG_INPUT] Received: 'ABCDE' (Total: 1)
+[LOG_INPUT] WARNING: new-barcode callback error: offline
+[LOG_INPUT] Stopped. Stats: Received=1, Errors=1
+[COM] Connected to COM3 @ 9600 baud
+[COM] Sent: n
+[COM] Sent: o1,o2
+[COM] Port closed. Stats: Sent=2, Failed=0
+[COM] Port closed. Stats: Sent=2, Failed=0
+[LOG_INPUT] Reader started (file=/tmp/tmpx59h4kl3/20261127/WH_AVIS_System.log)
+[LOG_INPUT] Received: 'OLD00' (Total: 1)
+[LOG_INPUT] Received: 'ABCDE' (Total: 2)
+[LOG_INPUT] Stopped. Stats: Received=2, Errors=0
+[LOG_INPUT] Reader started (file=/tmp/tmpk4xty4cy/20261127/WH_AVIS_System.log)
+[LOG_INPUT] Received: 'OLD00' (Total: 1)
+[LOG_INPUT] Received: 'ABCDE' (Total: 2)
+[LOG_INPUT] Received: 'ABCDE' (Total: 3)
+[LOG_INPUT] Stopped. Stats: Received=3, Errors=0
+[LOG_INPUT] Reader started (file=/tmp/tmpzhd099j0/20261127/WH_AVIS_System.log)
+[LOG_INPUT] Received: 'OLD00' (Total: 1)
+[LOG_INPUT] Received: 'ABCDE' (Total: 2)
+[LOG_INPUT] Received: 'ABCDE' (Total: 3)
+[LOG_INPUT] Stopped. Stats: Received=3, Errors=0
+[LOG_INPUT] Reader started (file=/tmp/tmpwuj64lpz/20261127/WH_AVIS_System.log)
+[LOG_INPUT] Received: 'ABCDE' (Total: 1)
+[LOG_INPUT] Stopped. Stats: Received=1, Errors=0
+[LOG_INPUT] Reader started (file=/tmp/tmpbpndm5lq/20261127/WH_AVIS_System.log)
+[LOG_INPUT] Received: 'ABCDE' (Total: 1)
+[LOG_INPUT] Received: 'ABCDE' (Total: 2)
+[LOG_INPUT] Received: 'FGHIJ' (Total: 3)
+[LOG_INPUT] Stopped. Stats: Received=3, Errors=0
+[LOG_INPUT] Reader started (file=/tmp/tmpugfm5yo2/20261127/WH_AVIS_System.log)
+[LOG_INPUT] Received: 'ABCDE' (Total: 1)
+[LOG_INPUT] Stopped. Stats: Received=1, Errors=0
+[LOG_INPUT] Reader started (file=/tmp/tmp5scqxvu_/20261127/WH_AVIS_System.log)
+[LOG_INPUT] Received: 'ABCDE' (Total: 1)
+[LOG_INPUT] Stopped. Stats: Received=1, Errors=0
+[LOG_INPUT] Reader started (file=/tmp/tmpvorf07fw/20261127/WH_AVIS_System.log)
+[LOG_INPUT] Received: 'OLD00' (Total: 1)
+[LOG_INPUT] Switched log file: /tmp/tmpvorf07fw/20261127/next_day.log
+[LOG_INPUT] Received: 'ABCDE' (Total: 2)
+[LOG_INPUT] Received: 'FGHIJ' (Total: 3)
+[LOG_INPUT] Stopped. Stats: Received=3, Errors=0
+[LOG_INPUT] Reader started (file=/tmp/tmp67jand72/20261127/WH_AVIS_System.log)
+[LOG_INPUT] Received: 'ABCDE' (Total: 1)
+[LOG_INPUT] Stopped. Stats: Received=1, Errors=0
+Acquisition/AI stopped. The external producer is NOT stopped. Do not treat this as an OK inspection result.
+
+test_all_three_images_are_fifo_and_not_discarded (test_async_acquisition.CaptureTests.test_all_three_images_are_fifo_and_not_discarded) ... ok
+test_byte_budget_overload (test_async_acquisition.CaptureTests.test_byte_budget_overload) ... ok
+test_decode_failure_is_not_success_and_retries (test_async_acquisition.CaptureTests.test_decode_failure_is_not_success_and_retries) ... ok
+test_disappearance_between_scan_and_open_is_bounded (test_async_acquisition.CaptureTests.test_disappearance_between_scan_and_open_is_bounded) ... ok
+test_initial_files_ignored_and_no_temp_created (test_async_acquisition.CaptureTests.test_initial_files_ignored_and_no_temp_created) ... ok
+test_metadata_change_during_read_rejected_and_fd_closed (test_async_acquisition.CaptureTests.test_metadata_change_during_read_rejected_and_fd_closed) ... ok
+test_missing_after_decode_error_is_not_retried_forever (test_async_acquisition.CaptureTests.test_missing_after_decode_error_is_not_retried_forever) ... ok
+test_overload_is_latched_no_drop_oldest (test_async_acquisition.CaptureTests.test_overload_is_latched_no_drop_oldest) ... ok
+test_oversized_input_is_error_not_queue_overload (test_async_acquisition.CaptureTests.test_oversized_input_is_error_not_queue_overload) ... ok
+test_partial_write_then_complete_is_recovered (test_async_acquisition.CaptureTests.test_partial_write_then_complete_is_recovered) ... ok
+test_reader_limit_and_fd_closed_on_error (test_async_acquisition.CaptureTests.test_reader_limit_and_fd_closed_on_error) ... ok
+test_reads_bytes_and_source_can_be_deleted_before_decode (test_async_acquisition.CaptureTests.test_reads_bytes_and_source_can_be_deleted_before_decode) ... ok
+test_real_poll_schedule_and_one_enumeration_per_scan (test_async_acquisition.CaptureTests.test_real_poll_schedule_and_one_enumeration_per_scan) ... ok
+test_reset_during_read_cannot_enqueue_stale_packet (test_async_acquisition.CaptureTests.test_reset_during_read_cannot_enqueue_stale_packet) ... ok
+test_reset_rejects_old_lease_and_ignores_existing (test_async_acquisition.CaptureTests.test_reset_rejects_old_lease_and_ignores_existing) ... ok
+test_same_filename_two_versions_preserved (test_async_acquisition.CaptureTests.test_same_filename_two_versions_preserved) ... ok
+test_shared_read_preserves_scanner_version_token (test_async_acquisition.CaptureTests.test_shared_read_preserves_scanner_version_token) ... ok
+test_slow_ai_does_not_stop_capture (test_async_acquisition.CaptureTests.test_slow_ai_does_not_stop_capture) ... ok
+test_transient_sharing_violation_retries_then_succeeds (test_async_acquisition.CaptureTests.test_transient_sharing_violation_retries_then_succeeds) ... ok
+test_windows_scan_handle_comparison_uses_common_native_fields (test_async_acquisition.CaptureTests.test_windows_scan_handle_comparison_uses_common_native_fields) ... ok
+test_real_main_control_flow_fifo_and_gui_during_ai (test_async_acquisition.MainCoordinatorTests.test_real_main_control_flow_fifo_and_gui_during_ai) ... ok
+test_delete_while_reader_handle_is_open (test_async_acquisition.WindowsSharingTests.test_delete_while_reader_handle_is_open) ... skipped 'Real Windows sharing test'
+test_exclusive_writer_is_not_bypassed (test_async_acquisition.WindowsSharingTests.test_exclusive_writer_is_not_bypassed) ... skipped 'Real Windows sharing test'
+test_rename_while_reader_handle_is_open (test_async_acquisition.WindowsSharingTests.test_rename_while_reader_handle_is_open) ... skipped 'Real Windows rename sharing test'
+test_scanned_token_matches_native_windows_handle (test_async_acquisition.WindowsSharingTests.test_scanned_token_matches_native_windows_handle) ... skipped 'Real Windows metadata test'
+test_batch_exact_two_and_overlay_details (test_compare_all_objects.BatchCompareIntegrationTests.test_batch_exact_two_and_overlay_details) ... ok
+test_batch_excess_count_ng (test_compare_all_objects.BatchCompareIntegrationTests.test_batch_excess_count_ng) ... ok
+test_batch_lower_confidence_bad_angle_ng (test_compare_all_objects.BatchCompareIntegrationTests.test_batch_lower_confidence_bad_angle_ng) ... ok
+test_all_objects_counted (test_compare_all_objects.CompareDetectionTests.test_all_objects_counted) ... ok
+test_csv (test_compare_all_objects.CompareDetectionTests.test_csv) ... ok
+test_legacy_single_and_empty (test_compare_all_objects.CompareDetectionTests.test_legacy_single_and_empty) ... ok
+test_outside_high_confidence_ignored (test_compare_all_objects.CompareDetectionTests.test_outside_high_confidence_ignored) ... ok
+test_all_objects_angle_checked_not_only_highest_confidence (test_compare_all_objects.MainCompareIntegrationTests.test_all_objects_angle_checked_not_only_highest_confidence) ... ok
+test_count_only_and_defaults (test_compare_all_objects.MainCompareIntegrationTests.test_count_only_and_defaults) ... ok
+test_exact_two_ok (test_compare_all_objects.MainCompareIntegrationTests.test_exact_two_ok) ... ok
+test_main_bad_angle_ng (test_compare_all_objects.MainCompareIntegrationTests.test_main_bad_angle_ng) ... ok
+test_main_emits_count_and_angle_details (test_compare_all_objects.MainCompareIntegrationTests.test_main_emits_count_and_angle_details) ... ok
+test_main_excess_two_good_ng (test_compare_all_objects.MainCompareIntegrationTests.test_main_excess_two_good_ng) ... ok
+test_no_objects_default_ng (test_compare_all_objects.MainCompareIntegrationTests.test_no_objects_default_ng) ... ok
+test_outside_high_confidence_does_not_override_inside (test_compare_all_objects.MainCompareIntegrationTests.test_outside_high_confidence_does_not_override_inside) ... ok
+test_partial_config_ng (test_compare_all_objects.MainCompareIntegrationTests.test_partial_config_ng) ... ok
+test_zero_allowed (test_compare_all_objects.MainCompareIntegrationTests.test_zero_allowed) ... ok
+test_allowed_empty (test_count_keypoint.CountAngleTests.test_allowed_empty) ... ok
+test_bad_angle_not_removed_from_count (test_count_keypoint.CountAngleTests.test_bad_angle_not_removed_from_count) ... ok
+test_center_on_boundary (test_count_keypoint.CountAngleTests.test_center_on_boundary) ... ok
+test_count_only_backwards_compatible (test_count_keypoint.CountAngleTests.test_count_only_backwards_compatible) ... ok
+test_csv_example_with_bom (test_count_keypoint.CountAngleTests.test_csv_example_with_bom) ... ok
+test_degenerate_points (test_count_keypoint.CountAngleTests.test_degenerate_points) ... ok
+test_empty_default_ng (test_count_keypoint.CountAngleTests.test_empty_default_ng) ... ok
+test_empty_invalid_config (test_count_keypoint.CountAngleTests.test_empty_invalid_config) ... ok
+test_input_not_modified (test_count_keypoint.CountAngleTests.test_input_not_modified) ... ok
+test_invalid_counts (test_count_keypoint.CountAngleTests.test_invalid_counts) ... ok
+test_invalid_tolerance (test_count_keypoint.CountAngleTests.test_invalid_tolerance) ... ok
+test_lower_confidence_bad_not_ignored (test_count_keypoint.CountAngleTests.test_lower_confidence_bad_not_ignored) ... ok
+test_malformed_bbox (test_count_keypoint.CountAngleTests.test_malformed_bbox) ... ok
+test_missing_keypoints (test_count_keypoint.CountAngleTests.test_missing_keypoints) ... ok
+test_negative_and_same_indices (test_count_keypoint.CountAngleTests.test_negative_and_same_indices) ... ok
+test_nonfinite_points (test_count_keypoint.CountAngleTests.test_nonfinite_points) ... ok
+test_normalize_expected_angle (test_count_keypoint.CountAngleTests.test_normalize_expected_angle) ... ok
+test_one_bad (test_count_keypoint.CountAngleTests.test_one_bad) ... ok
+test_one_good (test_count_keypoint.CountAngleTests.test_one_good) ... ok
+test_out_of_range_index (test_count_keypoint.CountAngleTests.test_out_of_range_index) ... ok
+test_outside_high_confidence_ignored (test_count_keypoint.CountAngleTests.test_outside_high_confidence_ignored) ... ok
+test_partial_angle_config (test_count_keypoint.CountAngleTests.test_partial_angle_config) ... ok
+test_single_detection_legacy_format (test_count_keypoint.CountAngleTests.test_single_detection_legacy_format) ... ok
+test_two_good_but_excess_count (test_count_keypoint.CountAngleTests.test_two_good_but_excess_count) ... ok
+test_two_good_exact_two (test_count_keypoint.CountAngleTests.test_two_good_exact_two) ... ok
+test_unbounded_max_and_default_min (test_count_keypoint.CountAngleTests.test_unbounded_max_and_default_min) ... ok
+test_wrap_360 (test_count_keypoint.CountAngleTests.test_wrap_360) ... ok
+test_main_bad_angle_ng (test_count_keypoint.MainCountIntegrationTests.test_main_bad_angle_ng) ... ok
+test_main_emits_count_and_angle_details (test_count_keypoint.MainCountIntegrationTests.test_main_emits_count_and_angle_details) ... ok
+test_main_excess_two_good_ng (test_count_keypoint.MainCountIntegrationTests.test_main_excess_two_good_ng) ... ok
+test_callback_error_does_not_crash_reader (test_log_com_notification.LogCOMTests.test_callback_error_does_not_crash_reader) ... ok
+test_exact_serial_bytes_and_existing_results (test_log_com_notification.LogCOMTests.test_exact_serial_bytes_and_existing_results) ... ok
+test_main_notifies_while_waiting_for_valid_csv (test_log_com_notification.LogCOMTests.test_main_notifies_while_waiting_for_valid_csv) ... ok
+test_main_wiring_repeat_scans_and_disabled_output (test_log_com_notification.LogCOMTests.test_main_wiring_repeat_scans_and_disabled_output) ... ok
+test_missing_file_created_after_start_is_notified (test_log_com_notification.LogCOMTests.test_missing_file_created_after_start_is_notified) ... ok
+test_new_and_repeat_lines_each_notify_once (test_log_com_notification.LogCOMTests.test_new_and_repeat_lines_each_notify_once) ... ok
+test_partial_line_waits_for_lf (test_log_com_notification.LogCOMTests.test_partial_line_waits_for_lf) ... ok
+test_pending_startup_line_is_not_lost (test_log_com_notification.LogCOMTests.test_pending_startup_line_is_not_lost) ... ok
+test_runtime_file_switch_notifies_all_scans (test_log_com_notification.LogCOMTests.test_runtime_file_switch_notifies_all_scans) ... ok
+test_startup_history_is_not_notified (test_log_com_notification.LogCOMTests.test_startup_history_is_not_notified) ... ok
+test_overload_aborts_before_pending_result_emission (test_main_state_machine.StateMachineTests.test_overload_aborts_before_pending_result_emission) ... ok
+test_product_change_during_inference_suppresses_old_com_result (test_main_state_machine.StateMachineTests.test_product_change_during_inference_suppresses_old_com_result) ... ok
+test_redetect_only_updates_previously_ng_rois (test_main_state_machine.StateMachineTests.test_redetect_only_updates_previously_ng_rois) ... ok
+test_repeat_scan_same_product_invalidates_old_job (test_main_state_machine.StateMachineTests.test_repeat_scan_same_product_invalidates_old_job) ... ok
+test_two_camera_three_batches_fifo (test_main_state_machine.StateMachineTests.test_two_camera_three_batches_fifo) ... ok
+
+----------------------------------------------------------------------
+Ran 87 tests in 2.143s
+
+OK (skipped=4)

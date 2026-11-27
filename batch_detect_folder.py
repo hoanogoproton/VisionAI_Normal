@@ -32,7 +32,7 @@ from modules.camera_config_loader import load_camera_config, get_camera_folder
 from modules.roi_manager import prepare_roi_data, crop_roi
 from modules.model_manager import get_model
 from modules.detector import detect_object, classify_crop
-from modules.comparator import compare_detection, compare_angle, is_center_inside_roi, compare_classification
+from modules.comparator import compare_count_and_angle, is_center_inside_roi, compare_classification
 from modules.result_visualizer import save_batch_result
 
 # ============================================================================
@@ -283,6 +283,7 @@ def batch_detect_folder(input_folder: str, product_code: str, camera: str, max_i
                 try:
                     check_mode = rule.get("check_mode", "compare").lower()
                     angle_info = {}
+                    compare_details = {}
                     detect_result = {"found": False, "detections": []}
                     display_crop_image = None
                     
@@ -382,25 +383,27 @@ def batch_detect_folder(input_folder: str, product_code: str, camera: str, max_i
                                 passed = False
                                 reason = f"FORBIDDEN_NG({detected_count}_found)"
                         
-                        else:  # compare mode
-                            passed, reason = compare_detection(
+                        else:  # compare mode: all centers in ROI, count + each angle
+                            passed, reason, compare_details = compare_count_and_angle(
                                 detect_result,
-                                rule["compare_roi"]
+                                rule["compare_roi"],
+                                min_count=rule.get("min_count"),
+                                max_count=rule.get("max_count"),
+                                keypoint_idx_1=rule.get("keypoint_idx_1"),
+                                keypoint_idx_2=rule.get("keypoint_idx_2"),
+                                expected_angle=rule.get("expected_angle"),
+                                angle_tolerance=rule.get("angle_tolerance"),
                             )
-                            
-                            if rule.get("keypoint_idx_1") is not None:
-                                if detect_result.get("found"):
-                                    angle_passed, angle_reason, angle_info = compare_angle(
-                                        detect_result,
-                                        rule["keypoint_idx_1"],
-                                        rule["keypoint_idx_2"],
-                                        rule["expected_angle"],
-                                        rule["angle_tolerance"]
-                                    )
-                                    if passed and not angle_passed:
-                                        passed = False
-                                        reason = angle_reason
-                    
+                            logger.log(
+                                f"    [COMPARE] {rule['roi_id']}: "
+                                f"in_compare_roi={compare_details['detected_count']}, "
+                                f"min={rule.get('min_count')}, max={rule.get('max_count')}"
+                            )
+                            for entry in compare_details["angle_results"]:
+                                logger.log(
+                                    f"      [ANGLE] obj{entry['object_index']}: {entry['reason']}"
+                                )
+
                     status_str = "OK" if passed else "NG"
                     logger.log(f"    {rule['roi_id']}: {status_str} ({reason})")
                     
@@ -411,6 +414,9 @@ def batch_detect_folder(input_folder: str, product_code: str, camera: str, max_i
                         "reason": reason
                     })
                     
+                    if compare_details:
+                        roi_results[-1].update(compare_details)
+
                     # === THEM: Chi tiết cho CSV ===
                     detail_results.append({
                         "Image": image_name,
@@ -434,6 +440,8 @@ def batch_detect_folder(input_folder: str, product_code: str, camera: str, max_i
                         "detect_roi": rule["detect_roi"],
                         "compare_roi": rule["compare_roi"],
                         "angle_info": angle_info,
+                        "check_mode": check_mode,
+                        **compare_details,
                     })
                     
                 except Exception as e:

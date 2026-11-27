@@ -1,0 +1,11 @@
+# Merge this TOP-LEVEL section into your existing config/config.yaml.
+# Do not replace camera/product/COM/ROI configuration with this snippet.
+acquisition:
+  poll_interval: 0.02          # seconds; starting value, measure actual file lifetime
+  queue_max_images: 32         # per folder, includes leased packets awaiting decode
+  queue_max_mb: 128            # raw bytes per folder; NOT total process RAM
+  max_image_mb: 32             # encoded source file limit
+  retry_delays_ms: [5, 10, 20, 40]  # initial attempt + up to 4 retries
+  retry_timeout_ms: 250        # per unchanged candidate; retry ends at first limit
+  require_complete_markers: true
+  max_decoded_pixels: 40000000 # post-decode check; NOT a hard allocation limit
